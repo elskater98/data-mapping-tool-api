@@ -20,7 +20,7 @@ def get_token():
         refresh_token = create_refresh_token(identity=username)
         return jsonify(access_token=access_token, refresh_token=refresh_token, sucess=True), 200
     else:
-        return Response(jsonify(success=False, error="Username or Password didn't match."), status=400)
+        return jsonify(success=False, error="Username or Password didn't match."), 400
 
 
 @authentication_router.route("/refresh", methods=["POST"])
