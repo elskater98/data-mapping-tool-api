@@ -15,7 +15,7 @@ app = Flask(__name__)
 
 # CORS
 # https://flask-cors.corydolphin.com/en/latest/api.html#extension
-CORS(app, origins=["localhost", "127.0.0.1"], methods="GET,HEAD,PUT,PATCH,POST,DELETE", supports_credentials=True)
+CORS(app)
 
 # JWT
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", default=secrets.token_hex())
