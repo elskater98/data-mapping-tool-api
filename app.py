@@ -8,6 +8,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
 from routes.authentication import authentication_router
+from routes.files import files_router
 
 load_dotenv()
 
@@ -23,8 +24,13 @@ app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=int(os.getenv("JWT_ACCE
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 jwt = JWTManager(app)
 
+# Files Path
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploaded_files')
+app.config['MAX_CONTENT_LENGTH'] = os.getenv('MAX_CONTENT_LENGTH', 16 * 1000 * 1000)
+
 # Routes
 app.register_blueprint(authentication_router, url_prefix='/auth')
+app.register_blueprint(files_router, url_prefix='/files')
 
 if __name__ == '__main__':
     # https://flask.palletsprojects.com/en/2.0.x/config/
