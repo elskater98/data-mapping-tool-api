@@ -8,3 +8,5 @@ services:
       - MONGO_INITDB_DATABASE=data_mapping_tool
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro

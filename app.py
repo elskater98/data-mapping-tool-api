@@ -7,6 +7,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
+from database import mongo
 from routes.authentication import authentication_router
 from routes.files import files_router
 
@@ -23,6 +24,10 @@ app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", default=secrets.token
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 72)))
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
 jwt = JWTManager(app)
+
+# MongoDB
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
+mongo.init_app(app)
 
 # Files Path
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploaded_files')
