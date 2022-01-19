@@ -10,6 +10,7 @@ from flask_jwt_extended import JWTManager
 from database import mongo
 from routes.authentication import authentication_router
 from routes.files import files_router
+from routes.mapping import mapping_router
 
 load_dotenv()
 
@@ -22,7 +23,7 @@ CORS(app)
 # JWT
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", default=secrets.token_hex())
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 72)))
-app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES", 30)))
 jwt = JWTManager(app)
 
 # MongoDB
@@ -31,11 +32,12 @@ mongo.init_app(app)
 
 # Files Path
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploaded_files')
-app.config['MAX_CONTENT_LENGTH'] = os.getenv('MAX_CONTENT_LENGTH', 16 * 1000 * 1000)
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1000 * 1000))
 
 # Routes
 app.register_blueprint(authentication_router, url_prefix='/auth')
 app.register_blueprint(files_router, url_prefix='/files')
+app.register_blueprint(mapping_router, url_prefix='/mapping')
 
 if __name__ == '__main__':
     # https://flask.palletsprojects.com/en/2.0.x/config/

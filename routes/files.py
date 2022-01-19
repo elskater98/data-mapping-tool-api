@@ -28,7 +28,9 @@ def upload_file():
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         file.save(file_path)
 
-    return {"successful": True}
+        return {"successful": True}
+
+    return {"error": "No file attached."}, 400
 
 
 @files_router.route("/download/<filename>", methods=["GET"])
