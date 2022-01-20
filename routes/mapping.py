@@ -15,7 +15,8 @@ def data_sample():
         filename = request.args.get('filename')
         filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], identity + '/' + filename)
         if os.path.exists(filepath):
-            df = pd.read_csv(filepath)
+            df = pd.read_csv(filepath)[:15]
+            df.dropna(inplace=True)
             return jsonify(data=df.to_dict(orient="records"))
         return {"error": f"The file '{filename}' don't exist."}, 400
     return {"error": "Field 'filename' not found."}, 400
