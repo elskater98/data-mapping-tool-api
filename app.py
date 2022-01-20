@@ -11,6 +11,7 @@ from database import mongo
 from routes.authentication import authentication_router
 from routes.files import files_router
 from routes.mapping import mapping_router
+from routes.users import users_router
 
 load_dotenv()
 
@@ -38,6 +39,7 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1000
 app.register_blueprint(authentication_router, url_prefix='/auth')
 app.register_blueprint(files_router, url_prefix='/files')
 app.register_blueprint(mapping_router, url_prefix='/mapping')
+app.register_blueprint(users_router, url_prefix='/users')
 
 if __name__ == '__main__':
     # https://flask.palletsprojects.com/en/2.0.x/config/

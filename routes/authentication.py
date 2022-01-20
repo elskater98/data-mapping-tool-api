@@ -1,8 +1,11 @@
 import os
 
+import bcrypt
 from flask import Blueprint, jsonify
 from flask import request
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
+
+from database import mongo
 
 authentication_router = Blueprint('authentication', __name__)
 
@@ -12,15 +15,15 @@ def get_token():
     username = request.json.get("username", None)
     password = request.json.get("password", None)
 
-    # TODO: Check Credentials
+    user = mongo.db.users.find_one({"username": username}, {"username": 1, "password": 1})
+    if user:
+        if bcrypt.checkpw(password.encode(), user['password'].encode()):
+            access_token = create_access_token(identity=username,
+                                               additional_claims={"roles": os.getenv('ADMIN_ROLE').split(',')})
+            refresh_token = create_refresh_token(identity=username)
+            return jsonify(access_token=access_token, refresh_token=refresh_token, sucess=True), 200
 
-    if os.getenv('ADMIN_USER') == username and os.getenv('ADMIN_PASSWORD') == password:
-        access_token = create_access_token(identity=username,
-                                           additional_claims={"roles": os.getenv('ADMIN_ROLE').split(',')})
-        refresh_token = create_refresh_token(identity=username)
-        return jsonify(access_token=access_token, refresh_token=refresh_token, sucess=True), 200
-    else:
-        return jsonify(success=False, error="Username or Password didn't match."), 400
+    return jsonify(success=False, error="Username or Password didn't match."), 400
 
 
 @authentication_router.route("/refresh", methods=["POST"])
