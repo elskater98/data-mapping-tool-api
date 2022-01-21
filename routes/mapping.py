@@ -1,14 +1,13 @@
-import json
 import os.path
 import uuid
 
 import pandas as pd
-from bson import ObjectId
 from flask import Blueprint, request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
 from models.mapping import MappingModel
+from utils import getUser
 
 mapping_router = Blueprint('mapping', __name__)
 
@@ -51,3 +50,17 @@ def create_mapping():
     mapping = MappingModel(**body)
     mongo.db.mapping.insert_one(mapping.dict())
     return jsonify(data=mapping.dict()), 201
+
+
+@mapping_router.route("/", methods=["GET"])
+@jwt_required()
+def get_mappings():
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if user:
+        if 'Admin' in user['roles']:
+            return jsonify(mappings=list(mongo.db.mapping.find({}, {"_id": 0})))
+        else:
+            return jsonify(mappings=list(mongo.db.mapping.find({"createdBy": user['username']}, {"_id": 0})))
+
+    return {"error": "Unauthorized!"}, 401
