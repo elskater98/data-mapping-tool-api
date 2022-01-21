@@ -1,8 +1,14 @@
+import json
 import os.path
+import uuid
 
+import pandas as pd
+from bson import ObjectId
 from flask import Blueprint, request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-import pandas as pd
+
+from database import mongo
+from models.mapping import MappingModel
 
 mapping_router = Blueprint('mapping', __name__)
 
@@ -34,3 +40,14 @@ def data_sample_columns():
             return jsonify(columns=list(df.columns))
         return {"error": f"The file '{filename}' don't exist."}, 400
     return {"error": "Field 'filename' not found."}, 400
+
+
+@mapping_router.route("/", methods=["POST"])
+@jwt_required()
+def create_mapping():
+    identity = get_jwt_identity()
+    body = request.json
+    body.update({"createdBy": identity, "ref": str(uuid.uuid4())})
+    mapping = MappingModel(**body)
+    mongo.db.mapping.insert_one(mapping.dict())
+    return jsonify(data=mapping.dict()), 201
