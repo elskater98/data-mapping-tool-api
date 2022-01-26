@@ -36,15 +36,18 @@ def get_user(id):
 @users_router.route("/<id>", methods=["PATCH"])
 @jwt_required()
 def edit_user(id):
+    # TODO
     pass
 
 
 @users_router.route("/<id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(id):
+    # TODO
     pass
 
 
 @users_router.route("/<id>/reset/password", methods=["POST"])
 def reset_password(id):
+    # TODO
     pass

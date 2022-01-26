@@ -1,15 +1,32 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
-from owlready2 import get_ontology
+from owlready2 import get_ontology, default_world
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology("BIGG-ontology.owl").load()
 
 
+@ontology_router.route("/query", methods=["POST"])
+@jwt_required()
+def sparql_query():
+    data = list(default_world.sparql(request.json['query']))
+    return jsonify(data=data.__str__())
+
+
 @ontology_router.route("/classes", methods=["GET"])
 @jwt_required()
 def get_classes():
-    return jsonify(data=[classe.name for classe in list(ontology.classes())])
+    return jsonify(data=[str(i) for i in list(ontology.classes())])
+
+
+@ontology_router.route("/classes/relations", methods=["GET"])
+@jwt_required()
+def get_classes_relations():
+    relations = []
+    for i in list(ontology.classes()):
+        relations.append(
+            {"class": str(i), "relations": list(i._get_class_possible_relations()).__str__()[1:-1].split(',')})
+    return jsonify(data=relations)
 
 
 @ontology_router.route("/properties/<property_type>", methods=["GET"])
@@ -29,5 +46,5 @@ def get_object_properties(property_type):
         properties = list(ontology.properties())
 
     return jsonify(
-        data=[{"name": property.name, "range": str(property.range)[1:-1],
-               "domain": str(property.domain)[1:-1]} for property in properties])
+        data=[{"name": i.name, "range": str(i.range)[1:-1],
+               "domain": str(i.domain)[1:-1]} for i in properties])

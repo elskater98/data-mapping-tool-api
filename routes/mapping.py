@@ -64,3 +64,30 @@ def get_mappings():
             return jsonify(mappings=list(mongo.db.mapping.find({"createdBy": user['username']}, {"_id": 0})))
 
     return {"error": "Unauthorized!"}, 401
+
+
+@mapping_router.route("/<ref>", methods=["GET"])
+@jwt_required()
+def get_mapping(ref):
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if user:
+        if 'Admin' in user['roles']:
+            return jsonify(mappings=mongo.db.mapping.find_one({"ref": ref}, {"_id": 0}))
+        else:
+            return jsonify(mappings=mongo.db.mapping.find_one({"ref": ref, "createdBy": identity}, {"_id": 0}))
+    return {"error": "Unauthorized!"}, 401
+
+
+@mapping_router.route("/<ref>", methods=["DELETE"])
+@jwt_required()
+def delete_mapping(ref):
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if user:
+        if 'Admin' in user['roles']:
+            mongo.db.mapping.delete_one({"ref": ref})
+        else:
+            mongo.db.mapping.delete_one({"ref": ref, "createdBy": identity})
+        return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
+    return {"error": "Unauthorized!"}, 401
