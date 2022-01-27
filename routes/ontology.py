@@ -46,5 +46,8 @@ def get_object_properties(property_type):
         properties = list(ontology.properties())
 
     return jsonify(
-        data=[{"name": i.name, "range": str(i.range)[1:-1],
-               "domain": str(i.domain)[1:-1]} for i in properties])
+        data=[
+            {"name": i.name,
+             "value": str(i.domain)[1:-1] + ':' + i.name,
+             "range": str(i.range)[1:-1],
+             "domain": str(i.domain)[1:-1]} for i in properties])
