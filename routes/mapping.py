@@ -91,3 +91,17 @@ def delete_mapping(ref):
             mongo.db.mapping.delete_one({"ref": ref, "createdBy": identity})
         return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
     return {"error": "Unauthorized!"}, 401
+
+
+@mapping_router.route("/<ref>", methods=["PATCH"])
+@jwt_required()
+def edit_mapping(ref):
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if user:
+        if 'Admin' in user['roles']:
+            mongo.db.mapping.delete_one({"ref": ref})
+        else:
+            mongo.db.mapping.update_one({"ref": ref, "createdBy": identity}, {"$set": request.json})
+        return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
+    return {"error": "Unauthorized!"}, 401
