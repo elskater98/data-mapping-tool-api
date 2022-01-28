@@ -16,7 +16,7 @@ def sparql_query():
 @ontology_router.route("/classes", methods=["GET"])
 @jwt_required()
 def get_classes():
-    return jsonify(data=[str(i) for i in list(ontology.classes())])
+    return jsonify(data=[{"label": str(i), "value": str(i)} for i in list(ontology.classes())])
 
 
 @ontology_router.route("/classes/relations", methods=["GET"])
