@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 from owlready2 import get_ontology, default_world
+import re
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology("BIGG-ontology.owl").load()
@@ -33,6 +34,8 @@ def get_classes_relations():
 @jwt_required()
 def get_object_properties(property_type):
     properties = []
+    classes = []
+
     if property_type == 'data':
         properties = list(ontology.data_properties())
 
@@ -44,6 +47,10 @@ def get_object_properties(property_type):
 
     if property_type == 'all':
         properties = list(ontology.properties())
+
+    if 'classes' in request.args:
+        classes = request.args['classes'].split(',')
+        properties = [elem for elem in properties if str(elem.domain)[1:-1] in classes]
 
     return jsonify(
         data=[
