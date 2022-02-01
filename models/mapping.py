@@ -9,7 +9,9 @@ class MappingModel(BaseModel):
     rawColumns: conlist(str, min_items=1)
     selectedColumns: conlist(str, min_items=1)
     filename: str
-    createdAt: datetime.datetime = Field(default=datetime.datetime.utcnow())
+    createdAt: datetime.datetime
     lastModificationAt: Optional[datetime.datetime]
     createdBy: EmailStr
     finished: bool = Field(default=False)
+    classes: list = Field(default=[])
+    properties: dict = Field(default={})

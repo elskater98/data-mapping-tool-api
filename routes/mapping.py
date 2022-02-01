@@ -1,7 +1,9 @@
+import datetime
 import os.path
 import uuid
 
 import pandas as pd
+import pymongo
 from flask import Blueprint, request, current_app, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -46,7 +48,7 @@ def data_sample_columns():
 def create_mapping():
     identity = get_jwt_identity()
     body = request.json
-    body.update({"createdBy": identity, "ref": str(uuid.uuid4())})
+    body.update({"createdBy": identity, "ref": str(uuid.uuid4()), "createdAt": datetime.datetime.utcnow()})
     mapping = MappingModel(**body)
     mongo.db.mapping.insert_one(mapping.dict())
     return jsonify(data=mapping.dict()), 201
@@ -59,9 +61,11 @@ def get_mappings():
     user = getUser(identity)
     if user:
         if 'Admin' in user['roles']:
-            return jsonify(mappings=list(mongo.db.mapping.find({}, {"_id": 0})))
+            return jsonify(
+                mappings=list(mongo.db.mapping.find({}, {"_id": 0}).sort([("createdAt", pymongo.DESCENDING)])))
         else:
-            return jsonify(mappings=list(mongo.db.mapping.find({"createdBy": user['username']}, {"_id": 0})))
+            return jsonify(mappings=list(mongo.db.mapping.find({"createdBy": user['username']}, {"_id": 0}).sort(
+                [("createdAt", pymongo.DESCENDING)])))
 
     return {"error": "Unauthorized!"}, 401
 
@@ -105,3 +109,17 @@ def edit_mapping(ref):
             mongo.db.mapping.update_one({"ref": ref, "createdBy": identity}, {"$set": request.json})
         return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
     return {"error": "Unauthorized!"}, 401
+
+
+@mapping_router.route("/pre/process/<ref>", methods=["POST"])
+@jwt_required()
+def pre_process_mapping(ref: str):
+    identity = get_jwt_identity()
+    mapping_instance = mongo.db.mapping.find_one({"ref": ref, "createdBy": identity}, {"_id": 0})
+    if mapping_instance:
+        mapping_instance.update(**request.json)
+        mapping_instance = MappingModel(**mapping_instance)
+        mongo.db.mapping.update_one({"ref": ref, "createdBy": identity}, {"$set": mapping_instance.dict()})
+        return jsonify(succesful=True)
+
+    return jsonify(succesful=False), 400
