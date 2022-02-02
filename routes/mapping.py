@@ -102,24 +102,49 @@ def delete_mapping(ref):
 def edit_mapping(ref):
     identity = get_jwt_identity()
     user = getUser(identity)
+
     if user:
         if 'Admin' in user['roles']:
-            mongo.db.mapping.delete_one({"ref": ref})
+            mapping_instance = mongo.db.mapping.find_one({"ref": ref}, {"_id": 0})
         else:
-            mongo.db.mapping.update_one({"ref": ref, "createdBy": identity}, {"$set": request.json})
-        return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
+            mapping_instance = mongo.db.mapping.find_one({"ref": ref, "createdBy": identity}, {"_id": 0})
+
+        if mapping_instance:
+            mapping_instance.update(**request.json)
+            mapping_instance = MappingModel(**mapping_instance)
+            mongo.db.mapping.update_one({"ref": ref}, {"$set": mapping_instance.dict()})
+            return jsonify(successful=f"The ref.: {ref} has been updated successfully.")
+        return jsonify(error="The references doesn't exist."), 400
     return {"error": "Unauthorized!"}, 401
 
 
-@mapping_router.route("/pre/process/<ref>", methods=["POST"])
+@mapping_router.route("/pre/process", methods=["POST"])
 @jwt_required()
-def pre_process_mapping(ref: str):
+def pre_process_mapping():
     identity = get_jwt_identity()
-    mapping_instance = mongo.db.mapping.find_one({"ref": ref, "createdBy": identity}, {"_id": 0})
-    if mapping_instance:
-        mapping_instance.update(**request.json)
-        mapping_instance = MappingModel(**mapping_instance)
-        mongo.db.mapping.update_one({"ref": ref, "createdBy": identity}, {"$set": mapping_instance.dict()})
-        return jsonify(succesful=True)
+    user = getUser(identity)
 
+    if 'ref' in request.json:
+        ref = request.json['ref']
+
+        if 'Admin' in user['roles']:
+            mapping_instance = mongo.db.mapping.find_one({"ref": ref}, {"_id": 0})
+        else:
+            mapping_instance = mongo.db.mapping.find_one({"ref": ref, "createdBy": identity}, {"_id": 0})
+
+        if mapping_instance:
+            map_classes = {}
+
+            for i in mapping_instance["properties"]:
+                for j in mapping_instance["properties"][i]:
+                    split = j.split(':')
+                    if not split[0] in map_classes:
+                        map_classes.update({split[0]: []})
+                    map_classes[split[0]].append({"column": i, "property": j})
+
+                    mongo.db.mapping.update_one({"ref": ref, "createdBy": identity},
+                                                {"$set": {"pre_process": map_classes}})
+
+            return jsonify(mapping=map_classes)
+        return jsonify(succesful=False), 400
     return jsonify(succesful=False), 400

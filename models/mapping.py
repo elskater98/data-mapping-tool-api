@@ -15,3 +15,4 @@ class MappingModel(BaseModel):
     finished: bool = Field(default=False)
     classes: list = Field(default=[])
     properties: dict = Field(default={})
+    pre_process: dict = Field(default={})
