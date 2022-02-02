@@ -135,15 +135,22 @@ def pre_process_mapping():
         if mapping_instance:
             map_classes = {}
 
-            for i in mapping_instance["properties"]:
-                for j in mapping_instance["properties"][i]:
+            for key in mapping_instance["properties"]:
+                for j in mapping_instance["properties"][key]:
                     split = j.split(':')
                     if not split[0] in map_classes:
                         map_classes.update({split[0]: []})
-                    map_classes[split[0]].append({"column": i, "property": j})
 
-                    mongo.db.mapping.update_one({"ref": ref, "createdBy": identity},
-                                                {"$set": {"pre_process": map_classes}})
+                    map_classes[split[0]].append({"column": key, "property": j})
+
+            relations = mapping_instance['relations'].copy()
+
+            for i in mapping_instance['relations']:
+                if not i['range'] in list(map_classes.keys()):
+                    relations.remove(i)
+
+            mongo.db.mapping.update_one({"ref": ref, "createdBy": identity},
+                                        {"$set": {"class_properties": map_classes, "relations": relations}})
 
             return jsonify(mapping=map_classes)
         return jsonify(succesful=False), 400
