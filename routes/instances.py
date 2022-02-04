@@ -48,9 +48,9 @@ def create_instance():
     body = request.json
     body.update({"createdBy": identity, "ref": str(uuid.uuid4()), "createdAt": datetime.datetime.utcnow()})
     try:
-        mapping = InstanceModel(**body)
-        mongo.db.instances.insert_one(mapping.dict())
-        return jsonify(data=mapping.dict()), 201
+        instance = InstanceModel(**body)
+        mongo.db.instances.insert_one(instance.dict())
+        return jsonify(data=instance.dict()), 201
     except Exception as ex:
         return jsonify(error=str(ex)), 400
 
