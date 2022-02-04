@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager
 from database import mongo
 from routes.authentication import authentication_router
 from routes.files import files_router
-from routes.mapping import mapping_router
+from routes.instances import instances_router
 from routes.ontology import ontology_router
 from routes.users import users_router
 
@@ -39,7 +39,7 @@ app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1000
 # Routes
 app.register_blueprint(authentication_router, url_prefix='/auth')
 app.register_blueprint(files_router, url_prefix='/files')
-app.register_blueprint(mapping_router, url_prefix='/mapping')
+app.register_blueprint(instances_router, url_prefix='/instances')
 app.register_blueprint(users_router, url_prefix='/users')
 app.register_blueprint(ontology_router, url_prefix='/ontology')
 

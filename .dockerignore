@@ -1,0 +1,9 @@
+.env
+Dockerfile
+.gitignore
+.idea
+inputs
+docker-compose.yml
+init-mongo.js
+__pycache__
+venv
