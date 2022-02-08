@@ -10,3 +10,5 @@ class InstanceModel(BaseModel):
     createdAt: datetime.datetime
     createdBy: EmailStr
     status: int = Field(default=0)
+    mapping: dict = Field(default={})
+    classes_to_map: list = Field(default=[])
