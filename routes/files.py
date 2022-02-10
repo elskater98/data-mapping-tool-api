@@ -46,4 +46,4 @@ def download_file(filename):
 def get_columns(filename):
     identity = get_jwt_identity()
     df = pd.read_csv(f"{current_app.config['UPLOAD_FOLDER']}/{identity}/{filename}")
-    return jsonify(data={"columns": list(df.columns), "sample": df.head(25).to_dict(orient="records")})
+    return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))
