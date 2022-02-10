@@ -1,11 +1,12 @@
 import os
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask import current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from flask import send_from_directory
 from utils import allowed_files
+import pandas as pd
 
 files_router = Blueprint('files', __name__)
 
@@ -38,3 +39,11 @@ def upload_file():
 def download_file(filename):
     identity = get_jwt_identity()
     return send_from_directory(os.path.join(current_app.config['UPLOAD_FOLDER'], identity + '/'), filename)
+
+
+@files_router.route("/<filename>", methods=["GET"])
+@jwt_required()
+def get_columns(filename):
+    identity = get_jwt_identity()
+    df = pd.read_csv(f"{current_app.config['UPLOAD_FOLDER']}/{identity}/{filename}")
+    return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))

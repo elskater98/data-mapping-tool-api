@@ -15,11 +15,11 @@ def get_token():
     username = request.json.get("username", None)
     password = request.json.get("password", None)
 
-    user = mongo.db.users.find_one({"username": username}, {"username": 1, "password": 1})
+    user = mongo.db.users.find_one({"username": username}, {"username": 1, "password": 1, "roles": 1})
     if user:
         if bcrypt.checkpw(password.encode(), user['password'].encode()):
             access_token = create_access_token(identity=username,
-                                               additional_claims={"roles": os.getenv('ADMIN_ROLE').split(',')})
+                                               additional_claims={"roles": user['roles']})
             refresh_token = create_refresh_token(identity=username)
             return jsonify(access_token=access_token, refresh_token=refresh_token, sucess=True), 200
 

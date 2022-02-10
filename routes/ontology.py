@@ -22,10 +22,8 @@ def get_classes():
 @ontology_router.route("/classes/relations", methods=["GET"])
 @jwt_required()
 def get_classes_relations():
-    relations = []
-    for i in list(ontology.classes()):
-        relations.append(
-            {"class": str(i), "relations": list(i._get_class_possible_relations()).__str__()[1:-1].split(',')})
+    relations = [{"class": str(i), "relations": list(i._get_class_possible_relations()).__str__()[1:-1].split(',')} for
+                 i in list(ontology.classes())]
     return jsonify(data=relations)
 
 
