@@ -131,4 +131,4 @@ dmypy.json
 config.json
 .idea/
 /uploaded_files
-sparql-generate/sparql-generate-2.0.9.jar
+output/
