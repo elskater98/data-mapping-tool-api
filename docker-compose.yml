@@ -13,7 +13,6 @@ services:
   neo4j:
     container_name: neo4j-db
     image: neo4j:latest
-    restart: always
     ports:
       - 7474:7474
       - 7687:7687
