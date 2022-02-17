@@ -14,4 +14,4 @@ mappings:
       - [ schema:buildingID, $(Num. Ens) ]
       - [ schema:buildingIDFromOrganization, $(Num. Ens) ]
       - [ schema:buildingName, $(Espai) ]
-      - [ schema:buildingUseType, $(Tipus d'ús) ]
+      - [ schema:bui ldingUseType, $(Tipus d'ús) ]

@@ -29,7 +29,7 @@ def add_source(source: str, delimiter='.'):
     return f"      - [ '{source}~{source_extension}' ]\n"
 
 
-def add_simple_subject(subject_name, column_name):
+def add_simple_subject(subject_name: str, column_name: str):
     return f"    s: {subject_name}:$({column_name})\n"
 
 
@@ -37,8 +37,34 @@ def init_predicate_object():
     return "    po:\n"
 
 
-def add_predicate_object_simple(predicate: str, object: str):
-    return f"      - [{predicate}, {object}]\n"
+def add_predicate_object_simple(predicate: str, _object: str):
+    return f"      - [ {predicate}, {_object} ]\n"
+
+
+def add_predicate_object_datatype(predicate: str, _object: str, datatype: str):
+    return f"""
+          - p: {predicate}
+            o:
+              - value: {_object}
+                datatype: {datatype}
+            """
+
+
+def add_predicade_object_datatype_language(lang: str):
+    return f"         language: {lang}"
+
+
+def link_entities(relation: str, mapping_name: str, key1: str, key2: str):
+    return f"""
+      - p: {relation}
+        o:
+          mapping: {mapping_name}
+          condition:
+            function: equal
+            parameters:
+              - [str1, {key1}]
+              - [str2, {key2}]
+    """
 
 
 if __name__ == '__main__':
