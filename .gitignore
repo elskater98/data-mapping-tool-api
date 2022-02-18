@@ -131,3 +131,4 @@ dmypy.json
 config.json
 .idea/
 /uploaded_files
+output/
