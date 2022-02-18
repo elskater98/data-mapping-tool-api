@@ -38,6 +38,9 @@ def generate_mapping_config():
             yaml += transform.transform.add_source(f"{instance['mapping'][element]['fileSelected']}")
             yaml += transform.transform.add_simple_subject(element, instance['mapping'][element]['subject'])
             mapping_element = instance['mapping'][element]
+            if element in instance['relations'] and element in req['classes']:
+                relations = instance['relations'][element]
+                print(relations)
             first_time = False
             for key, value in mapping_element['columns'].items():
                 if not first_time:
