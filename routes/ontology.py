@@ -60,9 +60,12 @@ def get_object_properties(property_type):
 @jwt_required()
 def get_relations():
     req = request.json
-    relations = []
+    relations = {}
+
     for i in ontology.object_properties():
         if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
-            relations.append({"from": str(i.domain[0]), "to": str(i.range[0]), "relation_name": str(i)})
+            if not str(i.domain[0]) in relations:
+                relations[str(i.domain[0])] = []
+            relations[str(i.domain[0])].append({"to": str(i.range[0]), "relation_name": str(i)})
 
     return jsonify(successful=True, relations=relations)
