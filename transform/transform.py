@@ -1,4 +1,4 @@
-PREFIXES = {"dbo": "https://dbpedia.org/ontology/"}
+PREFIXES = {"dbo": "https://dbpedia.org/ontology/", "bigg": "https://bigg-project.eu/ontology#"}
 
 
 def add_prefixes(prefixes=None):

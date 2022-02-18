@@ -30,6 +30,7 @@ def generate_mapping_config():
         yaml = ""
         yaml += transform.transform.add_prefixes()
         yaml += transform.transform.init_mappings()
+
         for element in req['classes']:
             element_split = element.split('.')
             yaml += transform.transform.add_mapping(element_split[-1].lower())
@@ -45,8 +46,8 @@ def generate_mapping_config():
                     first_time = True
                 yaml += transform.transform.add_predicate_object_simple(f"schema:{key}", f"$({value})")
 
-        with open('yarrrml-example/building-auto.yml', 'w') as file:
-            file.write(yaml)
+        # with open('yarrrml-example/building-auto.yml', 'w') as file:
+        #     file.write(yaml)
         return jsonify(successful=True, yaml=yaml)
 
     return jsonify(successful=False), 400

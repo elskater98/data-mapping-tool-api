@@ -19,7 +19,7 @@ def get_classes():
     return jsonify(data=[{"label": str(i), "value": str(i)} for i in list(ontology.classes())])
 
 
-@ontology_router.route("/classes/relations", methods=["GET"])
+@ontology_router.route("/relations", methods=["GET"])
 @jwt_required()
 def get_classes_relations():
     relations = [{"class": str(i), "relations": list(i._get_class_possible_relations()).__str__()[1:-1].split(',')} for
@@ -54,3 +54,15 @@ def get_object_properties(property_type):
              "value": str(i.domain)[1:-1] + ':' + i.name,
              "range": str(i.range)[1:-1],
              "domain": str(i.domain)[1:-1]} for i in properties])
+
+
+@ontology_router.route("/classes/relations", methods=["POST"])
+@jwt_required()
+def get_relations():
+    req = request.json
+    relations = []
+    for i in ontology.object_properties():
+        if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
+            relations.append({"from": str(i.domain[0]), "to": str(i.range[0]), "relation_name": str(i)})
+
+    return jsonify(successful=True, relations=relations)
