@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-import transform.transform
+import transform.yarrrml_transform as transform
 from database import mongo
 from utils import getUser
 
@@ -28,29 +28,39 @@ def generate_mapping_config():
         query = {'ref': req['ref']} if 'Admin' in user['roles'] else {'ref': req['ref'], "createdBy": identity}
         instance = mongo.db.instances.find_one(query, {"_id": 0})
         yaml = ""
-        yaml += transform.transform.add_prefixes()
-        yaml += transform.transform.init_mappings()
+        yaml += transform.add_prefixes()
+        yaml += transform.init_mappings()
 
         for element in req['classes']:
             element_split = element.split('.')
-            yaml += transform.transform.add_mapping(element_split[-1].lower())
-            yaml += transform.transform.init_sources()
-            yaml += transform.transform.add_source(f"{instance['mapping'][element]['fileSelected']}")
-            yaml += transform.transform.add_simple_subject(element, instance['mapping'][element]['subject'])
+            yaml += transform.add_mapping(element_split[-1].lower())
+            yaml += transform.init_sources()
+            yaml += transform.add_source(f"{instance['mapping'][element]['fileSelected']}")
+            yaml += transform.add_simple_subject(f"bigg:{element}", instance['mapping'][element]['subject'])
             mapping_element = instance['mapping'][element]
-            if element in instance['relations'] and element in req['classes']:
-                relations = instance['relations'][element]
-                print(relations)
+
             first_time = False
+
+            # Property objects
             for key, value in mapping_element['columns'].items():
                 if not first_time:
-                    yaml += transform.transform.init_predicate_object()
-                    yaml += transform.transform.add_predicate_object_simple('a', f"schema:{element}")
+                    yaml += transform.init_predicate_object()
+                    yaml += transform.add_predicate_object_simple('a', f"schema:{element}")
                     first_time = True
-                yaml += transform.transform.add_predicate_object_simple(f"schema:{key}", f"$({value})")
+                yaml += transform.add_predicate_object_simple(f"schema:{key}", f"$({value})")
 
-        # with open('yarrrml-example/building-auto.yml', 'w') as file:
-        #     file.write(yaml)
+            # Relations
+            if element in instance['relations'] and element in req['classes']:
+                relations = instance['relations'][element]
+                for rel in relations:
+                    if rel['to'] in req['classes']:
+                        yaml += transform.link_entities(f"bigg:{rel['relation_name']}",
+                                                        rel['to'].split('.')[-1].lower(), "equal",
+                                                        f"$({instance['mapping'][element]['subject']})",
+                                                        f"$({instance['mapping'][rel['to']]['subject']})")
+
+        with open('yarrrml-example/building-auto.yml', 'w') as file:
+            file.write(yaml)
         return jsonify(successful=True, yaml=yaml)
 
     return jsonify(successful=False), 400
