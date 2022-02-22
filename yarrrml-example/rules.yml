@@ -5,7 +5,7 @@ prefixes:
 mappings:
   building:
     sources:
-      - [ 'example1.csv~csv' ]
+      - [ 'location.csv~csv' ]
     s: bigg:BIGG-ontology.Building/$(Num. Ens)
     po:
       - [ a, schema:BIGG-ontology.Building ]
@@ -24,7 +24,7 @@ mappings:
 
   locationinfo:
     sources:
-      - [ 'example1.csv~csv' ]
+      - [ 'location.csv~csv' ]
     s: bigg:BIGG-ontology.LocationInfo/$(Num. Ens)
     po:
       - [ a, schema:BIGG-ontology.LocationInfo ]

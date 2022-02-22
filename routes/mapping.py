@@ -58,6 +58,7 @@ def generate_mapping_config():
                                                         rel['to'].split('.')[-1].lower(), "equal",
                                                         f"$({instance['mapping'][element]['subject']})",
                                                         f"$({instance['mapping'][rel['to']]['subject']})")
+            yaml += "\n"
 
         with open('yarrrml-example/building-auto.yml', 'w') as file:
             file.write(yaml)
