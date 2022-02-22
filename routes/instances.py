@@ -52,7 +52,7 @@ def create_instance():
     try:
         instance = InstanceModel(**body)
         mongo.db.instances.insert_one(instance.dict())
-        return jsonify(successful=True, data=instance.dict()), 201
+        return jsonify(successful=True, instance=instance.dict()), 201
     except Exception as ex:
         return jsonify(error=str(ex)), 400
 
