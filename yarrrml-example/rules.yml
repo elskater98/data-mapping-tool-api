@@ -1,17 +1,35 @@
 prefixes:
-  ex: http://www.example.com/
-  e: http://myontology.com/
-  dbo: http://dbpedia.org/ontology/
-  grel: http://users.ugent.be/~bjdmeest/function/grel.ttl#
+  dbo: https://dbpedia.org/ontology/
+  bigg: https://bigg-project.eu/ontology#
 
 mappings:
   building:
     sources:
-      - [ 'building.csv~csv' ]
-    s: BIGG-ontology.Building:$(Num. Ens)
+      - [ 'location.csv~csv' ]
+    s: bigg:BIGG-ontology.Building/$(Num. Ens)
     po:
       - [ a, schema:BIGG-ontology.Building ]
       - [ schema:buildingID, $(Num. Ens) ]
       - [ schema:buildingIDFromOrganization, $(Num. Ens) ]
       - [ schema:buildingName, $(Espai) ]
       - [ schema:buildingUseType, $(Tipus d'ús) ]
+      - p: bigg:BIGG-ontology.hasLocationInfo
+        o:
+          mapping: locationinfo
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(Num. Ens) ]
+              - [ str2, $(Num. Ens) ]
+
+  locationinfo:
+    sources:
+      - [ 'location.csv~csv' ]
+    s: bigg:BIGG-ontology.LocationInfo/$(Num. Ens)
+    po:
+      - [ a, schema:BIGG-ontology.LocationInfo ]
+      - [ schema:addressCity, $(Municipi) ]
+      - [ schema:addressPostalCode, $(Codi Postal) ]
+      - [ schema:addressProvince, $(Província) ]
+      - [ schema:addressStreetName, $(Via) ]
+      - [ schema:addressStreetNumber, $(Num. via) ]

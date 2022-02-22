@@ -1,6 +1,10 @@
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from owlready2 import get_ontology, default_world
+
+from database import mongo
+from models.instance import InstanceModel
+from utils import getUser
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology("BIGG-ontology.owl").load()
@@ -61,11 +65,46 @@ def get_object_properties(property_type):
 def get_relations():
     req = request.json
     relations = {}
-
     for i in ontology.object_properties():
         if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
-            if not str(i.domain[0]) in relations:
-                relations[str(i.domain[0])] = []
-            relations[str(i.domain[0])].append({"to": str(i.range[0]), "relation_name": str(i)})
+            rel = {"from": str(i.domain[0]), "to": str(i.range[0]), "relation": str(i)}
+            relations.update({str(i): rel})
 
     return jsonify(successful=True, relations=relations)
+
+
+@ontology_router.route("/init/instance/<ref>", methods=["POST"])
+@jwt_required()
+def init_instance_ontology(ref):
+    identity = get_jwt_identity()
+    user = getUser(identity)
+
+    query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
+    instance = mongo.db.instances.find_one(query, {"_id": 0})
+    if instance:
+        classes = [str(i) for i in list(ontology.classes())]
+        relations = ontology.object_properties()
+
+        for _class in classes:
+            if 'mapping' not in instance:
+                instance.update({"mapping": {}})
+            instance['mapping'].update(
+                {_class: {"status": False, "fileSelected": instance['filenames'][0], "columns": {}}})
+
+        for relation in relations:
+            if 'relations' not in instance:
+                instance.update({"relations": {}})
+            instance['relations'].update(
+                {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
+                                 "relation": str(relation),
+                                 "selected": False}})
+
+        try:
+            instance_model = InstanceModel(**instance)
+            mongo.db.instances.update_one(query, {
+                "$set": {"mapping": instance['mapping'], "relations": instance['relations']}})
+            return jsonify(successful=True, instance=instance_model.dict())
+        except Exception as ex:
+            return jsonify(successful=False, error=str(ex)), 400
+
+    return jsonify(successful=False), 401

@@ -1,3 +1,6 @@
+# The aim of this fragment of code is generate the patterns that allow us to build a yarrrml file.
+# To do it I follow the structures from https://rml.io/yarrrml/.
+
 PREFIXES = {"dbo": "https://dbpedia.org/ontology/", "bigg": "https://bigg-project.eu/ontology#"}
 
 
@@ -30,7 +33,7 @@ def add_source(source: str, delimiter='.'):
 
 
 def add_simple_subject(subject_name: str, column_name: str):
-    return f"    s: {subject_name}:$({column_name})\n"
+    return f"    s: {subject_name}/$({column_name})\n"
 
 
 def init_predicate_object():
@@ -54,17 +57,10 @@ def add_predicade_object_datatype_language(lang: str):
     return f"         language: {lang}"
 
 
-def link_entities(relation: str, mapping_name: str, key1: str, key2: str):
-    return f"""
-      - p: {relation}
-        o:
-          mapping: {mapping_name}
-          condition:
-            function: equal
-            parameters:
-              - [str1, {key1}]
-              - [str2, {key2}]
-    """
+def link_entities(relation: str, mapping_name: str, function: str, key1: str, key2: str):
+    return f"      - p: {relation}\n        o:\n          mapping: {mapping_name}\n" \
+           f"          condition:\n            function: {function}\n            parameters:\n" \
+           f"              - [ str1, {key1} ]\n              - [ str2, {key2} ]\n\n"
 
 
 if __name__ == '__main__':

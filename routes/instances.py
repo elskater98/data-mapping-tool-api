@@ -19,13 +19,14 @@ def get_instances():
     user = getUser(identity)
     if user:
         if 'Admin' in user['roles']:
-            return jsonify(
-                data=list(mongo.db.instances.find({}, {"_id": 0}).sort([("createdAt", pymongo.DESCENDING)])))
+            return jsonify(successful=True,
+                           data=list(mongo.db.instances.find({}, {"_id": 0}).sort([("createdAt", pymongo.DESCENDING)])))
         else:
-            return jsonify(data=list(mongo.db.instances.find({"createdBy": user['username']}, {"_id": 0}).sort(
-                [("createdAt", pymongo.DESCENDING)])))
+            return jsonify(successful=True,
+                           data=list(mongo.db.instances.find({"createdBy": user['username']}, {"_id": 0}).sort(
+                               [("createdAt", pymongo.DESCENDING)])))
 
-    return {"error": "Unauthorized!"}, 401
+    return jsonify(successful=False), 401
 
 
 @instances_router.route("/<ref>", methods=["GET"])
@@ -35,10 +36,11 @@ def get_instance(ref):
     user = getUser(identity)
     if user:
         if 'Admin' in user['roles']:
-            return jsonify(data=mongo.db.instances.find_one({"ref": ref}, {"_id": 0}))
+            return jsonify(successful=True, data=mongo.db.instances.find_one({"ref": ref}, {"_id": 0}))
         else:
-            return jsonify(data=mongo.db.instances.find_one({"ref": ref, "createdBy": identity}, {"_id": 0}))
-    return {"error": "Unauthorized!"}, 401
+            return jsonify(successful=True,
+                           data=mongo.db.instances.find_one({"ref": ref, "createdBy": identity}, {"_id": 0}))
+    return jsonify(successful=False), 401
 
 
 @instances_router.route("/", methods=["POST"])
@@ -50,7 +52,7 @@ def create_instance():
     try:
         instance = InstanceModel(**body)
         mongo.db.instances.insert_one(instance.dict())
-        return jsonify(data=instance.dict()), 201
+        return jsonify(successful=True, instance=instance.dict()), 201
     except Exception as ex:
         return jsonify(error=str(ex)), 400
 
@@ -72,11 +74,11 @@ def edit_instance(ref):
             try:
                 instance = InstanceModel(**instance)
                 mongo.db.instances.update_one({"ref": ref}, {"$set": instance.dict()})
-                return jsonify(successful=f"The ref.: {ref} has been updated successfully.")
+                return jsonify(successful=f"The ref.: {ref} has been updated successfully.", instance=instance.dict())
             except Exception as ex:
                 return jsonify(error=str(ex)), 400
-        return jsonify(error="The references doesn't exist."), 400
-    return {"error": "Unauthorized!"}, 401
+        return jsonify(successful=False, error="The references doesn't exist."), 400
+    return jsonify(successful=False), 401
 
 
 @instances_router.route("/<ref>", methods=["DELETE"])
@@ -90,4 +92,4 @@ def delete_instance(ref):
         else:
             mongo.db.instances.delete_one({"ref": ref, "createdBy": identity})
         return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
-    return {"error": "Unauthorized!"}, 401
+    return jsonify(successful=False), 401
