@@ -44,7 +44,3 @@ app.register_blueprint(instances_router, url_prefix='/instances')
 app.register_blueprint(users_router, url_prefix='/users')
 app.register_blueprint(ontology_router, url_prefix='/ontology')
 app.register_blueprint(mapping_router, url_prefix='/mapping')
-
-if __name__ == '__main__':
-    # https://flask.palletsprojects.com/en/2.0.x/config/
-    app.run(host=os.getenv('SERVER_HOSTNAME', default='localhost'), port=int(os.getenv('SERVER_PORT', default='8080')))
