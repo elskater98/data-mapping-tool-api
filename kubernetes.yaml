@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-mapping-tool-server-deployment
+  labels:
+    app: data-mapping-tool-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-mapping-tool-server
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: data-mapping-tool-server
+    spec:
+      containers:
+        - name: data-mapping-tool-server
+          image: docker.tech.beegroup-cimne.com/data-mapping-tool/server:latest
+          command: [ "python", "wsgi.py" ]
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: server-secret
+              mountPath: /app/.env
+              subPath: .env
+
+      imagePullSecrets:
+        - name: registrypullsecret
+
+      volumes:
+        - name: server-secret
+          secret:
+            secretName: server-secrets
+            items:
+              - key: .env
+                path: .env
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-mapping-tool-server-service
+  labels:
+    app: data-mapping-tool-server-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: data-mapping-tool-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
