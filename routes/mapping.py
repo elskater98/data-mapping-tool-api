@@ -57,8 +57,6 @@ def generate_mapping_config():
 
             yaml += "\n"
 
-        with open('yarrrml-example/building-auto.yml', 'w') as file:
-            file.write(yaml)
         return jsonify(successful=True, yaml=yaml)
 
     return jsonify(successful=False), 400
