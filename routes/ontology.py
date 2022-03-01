@@ -7,7 +7,7 @@ from models.instance import InstanceModel
 from utils import getUser
 
 ontology_router = Blueprint('ontology', __name__)
-ontology = get_ontology("BIGG-ontology.owl").load()
+ontology = get_ontology("ontology.owl").load()
 
 
 @ontology_router.route("/query", methods=["POST"])
