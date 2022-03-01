@@ -49,19 +49,14 @@ def generate_mapping_config():
                     first_time = True
                 yaml += transform.add_predicate_object_simple(f"schema:{key}", f"$({value})")
 
-            # Relations
-            if element in instance['relations'] and element in req['classes']:
-                relations = instance['relations'][element]
-                for rel in relations:
-                    if rel['to'] in req['classes']:
-                        yaml += transform.link_entities(f"bigg:{rel['relation_name']}",
-                                                        rel['to'].split('.')[-1].lower(), "equal",
-                                                        f"$({instance['mapping'][element]['subject']})",
-                                                        f"$({instance['mapping'][rel['to']]['subject']})")
+            for key, value in instance['relations'].items():
+                if value['selected'] and value['from'] == element and value['to'] in req['classes']:
+                    yaml += transform.link_entities(f"bigg:{key}",
+                                                    value['to'].split('.')[-1].lower(), "equal",
+                                                    f"$({value['from_rel']})", f"$({value['to_rel']})")
+
             yaml += "\n"
 
-        with open('yarrrml-example/building-auto.yml', 'w') as file:
-            file.write(yaml)
         return jsonify(successful=True, yaml=yaml)
 
     return jsonify(successful=False), 400

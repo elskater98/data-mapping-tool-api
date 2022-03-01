@@ -7,7 +7,7 @@ from models.instance import InstanceModel
 from utils import getUser
 
 ontology_router = Blueprint('ontology', __name__)
-ontology = get_ontology("BIGG-ontology.owl").load()
+ontology = get_ontology("ontology.owl").load()
 
 
 @ontology_router.route("/query", methods=["POST"])
@@ -97,7 +97,7 @@ def init_instance_ontology(ref):
             instance['relations'].update(
                 {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
                                  "relation": str(relation),
-                                 "selected": False}})
+                                 "selected": False, "from_rel": None, "to_rel": None}})
 
         try:
             instance_model = InstanceModel(**instance)

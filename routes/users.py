@@ -1,9 +1,10 @@
 import bcrypt
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
 from models.user import UserModel
+from utils import getUser
 
 users_router = Blueprint('users', __name__)
 
@@ -11,7 +12,11 @@ users_router = Blueprint('users', __name__)
 @users_router.route("/", methods=["GET"])
 @jwt_required()
 def get_users():
-    return jsonify(data=list(mongo.db.users.find({}, {'_id': 0})))
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if 'Admin' in user['roles']:
+        return jsonify(data=list(mongo.db.users.find({}, {'_id': 0})))
+    return jsonify(error=True), 401
 
 
 @users_router.route("/", methods=["POST"])
@@ -30,7 +35,10 @@ def create_user():
 @users_router.route("/<id>", methods=["GET"])
 @jwt_required()
 def get_user(id):
-    return mongo.db.users.find_one_or_404({"username": id}, {'_id': 0})
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if 'Admin' in user['roles'] or identity == id:
+        return mongo.db.users.find_one_or_404({"username": id}, {'_id': 0})
 
 
 @users_router.route("/<id>", methods=["PATCH"])

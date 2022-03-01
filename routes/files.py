@@ -1,49 +1,53 @@
-import os
+from io import StringIO
 
-from flask import Blueprint, request, jsonify
-from flask import current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from werkzeug.utils import secure_filename
-from flask import send_from_directory
-from utils import allowed_files
 import pandas as pd
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+
+from database import mongo
+from utils import allowed_files
 
 files_router = Blueprint('files', __name__)
 
-ALLOWED_EXTENSIONS = ['json', 'csv']
+ALLOWED_EXTENSIONS = ['csv']
 
 
 @files_router.route("/upload", methods=["POST"])
 @jwt_required()
 def upload_file():
     if 'file' not in request.files or request.files['file'].filename == '':
-        return {"error": "No file attached."}, 400
+        return jsonify(error="No file attached."), 400
 
     file = request.files['file']
 
     if file and allowed_files(filename=file.filename, allowed_extensions=ALLOWED_EXTENSIONS):
         identity = get_jwt_identity()
+        mongo.save_file(filename=file.filename, fileobj=file, kwargs={"owner": identity})
 
-        filename = secure_filename(file.filename)
-        file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], identity + '/' + filename)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        file.save(file_path)
+        return jsonify(successful=True)
 
-        return {"successful": True}
-
-    return {"error": "No file attached."}, 400
+    return jsonify(error="No file attached."), 400
 
 
 @files_router.route("/download/<filename>", methods=["GET"])
 @jwt_required()
 def download_file(filename):
     identity = get_jwt_identity()
-    return send_from_directory(os.path.join(current_app.config['UPLOAD_FOLDER'], identity + '/'), filename)
+    has_access = mongo.db.fs.files.find_one({"kwargs.owner": identity, "filename": filename})
+    if has_access:
+        return mongo.send_file(filename=filename)
+    return jsonify(error="No access to file"), 401
 
 
 @files_router.route("/<filename>", methods=["GET"])
 @jwt_required()
 def get_columns(filename):
     identity = get_jwt_identity()
-    df = pd.read_csv(f"{current_app.config['UPLOAD_FOLDER']}/{identity}/{filename}")
-    return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))
+
+    has_access = mongo.db.fs.files.find_one({"kwargs.owner": identity, "filename": filename})
+    if has_access:
+        file = mongo.send_file(filename=filename)
+        file_str = file.response.file.read().decode('utf-8')
+        df = pd.read_csv(StringIO(file_str), sep=',')
+        return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))
+    return jsonify(error="No access to file"), 401

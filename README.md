@@ -35,11 +35,14 @@ If you do not have a MongoDB, you can deploy it using `docker-compose up -d`.
     JWT_ACCESS_TOKEN_EXPIRES=
     JWT_REFRESH_TOKEN_EXPIRES=
 
-    UPLOAD_FOLDER=
-
     MONGO_URI=
 
 ### ¿ How to Generate Secret Key ?
 
     $ python -c 'import secrets; print(secrets.token_hex())'
     '192b9bdd22ab9ed4d12e236c78afcb9a393ec15f71bbf5dc987d54727823bcbf'
+
+## Ontology
+
+The ontology that the backend use is located in `ontology.owl`, in this file you can put yours ontology. By default, it
+uses the `RDF/OWL` format to represent our ontology. 

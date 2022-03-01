@@ -33,10 +33,6 @@ jwt = JWTManager(app)
 app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo.init_app(app)
 
-# Files Path
-app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploaded_files')
-app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1000 * 1000))
-
 # Routes
 app.register_blueprint(authentication_router, url_prefix='/auth')
 app.register_blueprint(files_router, url_prefix='/files')

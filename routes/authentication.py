@@ -39,3 +39,10 @@ def refresh():
 def protected():
     claims = get_jwt()
     return jsonify(claims=claims)
+
+
+@authentication_router.route("/profile", methods=["GET"])
+@jwt_required()
+def get_profile():
+    identity = get_jwt_identity()
+    return jsonify(data=mongo.db.users.find_one({"username": identity}, {'_id': 0, 'password': 0}))
