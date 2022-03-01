@@ -1,10 +1,7 @@
-import os
 from io import StringIO
 
 import pandas as pd
 from flask import Blueprint, request, jsonify
-from flask import current_app
-from flask import send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
@@ -49,8 +46,8 @@ def get_columns(filename):
 
     has_access = mongo.db.fs.files.find_one({"kwargs.owner": identity, "filename": filename})
     if has_access:
-        x = mongo.send_file(filename=filename)
-        x = x.response.file.read().decode('utf-8')
-        df = pd.read_csv(StringIO(x), sep=',')
+        file = mongo.send_file(filename=filename)
+        file_str = file.response.file.read().decode('utf-8')
+        df = pd.read_csv(StringIO(file_str), sep=',')
         return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))
     return jsonify(error="No access to file"), 401
