@@ -29,7 +29,7 @@ def create_user():
         user = UserModel(**body)
         mongo.db.users.insert_one(user.dict())
         return user.json(), 201
-    return {"error": "The email already exist."}, 400
+    return jsonify(error=True, info="The email already exist."), 400
 
 
 @users_router.route("/<id>", methods=["GET"])
@@ -38,19 +38,42 @@ def get_user(id):
     identity = get_jwt_identity()
     user = getUser(identity)
     if 'Admin' in user['roles'] or identity == id:
-        return mongo.db.users.find_one_or_404({"username": id}, {'_id': 0})
+        return jsonify(user=mongo.db.users.find_one_or_404({"username": id}, {'_id': 0}))
+    return jsonify(error=True), 400
 
 
 @users_router.route("/<id>", methods=["PATCH"])
 @jwt_required()
 def edit_user(id):
-    # TODO
-    pass
+    identity = get_jwt_identity()
+    user = getUser(identity)
+    if 'Admin' in user['roles'] or identity == id:
+        user.update(**request.json)
+        try:
+            user_model = UserModel(**user)
+            mongo.db.users.update_one({"username": id}, {"$set": user_model.dict()})
+            return jsonify(successful=f"The user.: {id} has been updated successfully.", user=user_model.dict())
+        except Exception as ex:
+            return jsonify(error=str(ex)), 400
+
+    return jsonify(error=True), 400
 
 
 @users_router.route("/<id>", methods=["DELETE"])
 @jwt_required()
 def delete_user(id):
+    identity = get_jwt_identity()
+    user = getUser(identity)
+
+    if 'Admin' in user['roles'] or identity == id:
+        mongo.db.users.delete_one({"username": id})
+        return jsonify(successful=f"The user {id} has been deleted successfully.")
+
+    return jsonify(successful=False), 401
+
+
+@users_router.route("/<id>/change/password", methods=["POST"])
+def change_password(id):
     # TODO
     pass
 
