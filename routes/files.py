@@ -1,5 +1,6 @@
 from io import StringIO
 
+import numpy as np
 import pandas as pd
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -49,5 +50,6 @@ def get_columns(filename):
         file = mongo.send_file(filename=filename)
         file_str = file.response.file.read().decode('utf-8')
         df = pd.read_csv(StringIO(file_str), sep=',')
+        df = df.astype(object).replace(np.nan, 'None')
         return jsonify(columns=list(df.columns), sample=df.head(25).to_dict(orient="records"))
     return jsonify(error="No access to file"), 401
