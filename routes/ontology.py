@@ -1,3 +1,5 @@
+import os
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from owlready2 import get_ontology, default_world
@@ -7,7 +9,7 @@ from models.instance import InstanceModel
 from utils import getUser
 
 ontology_router = Blueprint('ontology', __name__)
-ontology = get_ontology("ontology.owl").load()
+ontology = get_ontology(os.getenv("ONTOLOGY_PATH", os.path.join(os.path.abspath(os.getcwd()), "ontology.owl"))).load()
 
 
 @ontology_router.route("/query", methods=["POST"])
