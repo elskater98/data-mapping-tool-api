@@ -7,4 +7,4 @@
 ## [RML Mapper](https://hub.docker.com/r/rmlio/rmlmapper-java)
     docker pull rmlio/rmlmapper-java
 
-    docker run --rm -v $(pwd)/resources:/data rmlio/rmlmapper-java  -m mapping.ttl -o /data/out.rdf
+    docker run --rm -v $(pwd)/:/data rmlio/rmlmapper-java  -m mapping.ttl -o /data/out.rdf
