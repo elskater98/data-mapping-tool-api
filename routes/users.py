@@ -13,8 +13,8 @@ users_router = Blueprint('users', __name__)
 @jwt_required()
 def get_users():
     identity = get_jwt_identity()
-    user = getUser(identity)
-    if 'Admin' in user['roles']:
+    current_user = getUser(identity)
+    if 'Admin' in current_user['roles']:
         return jsonify(data=list(mongo.db.users.find({}, {'_id': 0})))
     return jsonify(error=True), 401
 
@@ -36,8 +36,8 @@ def create_user():
 @jwt_required()
 def get_user(id):
     identity = get_jwt_identity()
-    user = getUser(identity)
-    if 'Admin' in user['roles'] or identity == id:
+    current_user = getUser(identity)
+    if 'Admin' in current_user['roles'] or identity == id:
         return jsonify(user=mongo.db.users.find_one_or_404({"username": id}, {'_id': 0}))
     return jsonify(error=True), 400
 
@@ -46,8 +46,9 @@ def get_user(id):
 @jwt_required()
 def edit_user(id):
     identity = get_jwt_identity()
-    user = getUser(identity)
-    if 'Admin' in user['roles'] or identity == id:
+    current_user = getUser(identity)
+    user = getUser(id)
+    if 'Admin' in current_user['roles'] or identity == id:
         user.update(**request.json)
         try:
             user_model = UserModel(**user).dict()
