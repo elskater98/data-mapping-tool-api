@@ -14,7 +14,6 @@ policy = PasswordPolicy.from_names(
     uppercase=1,  # need min. 1 uppercase letters
     numbers=1,  # need min. 1 digits
     special=1,  # need min. 1 special characters
-    nonletters=2,  # need min. 2 non-letter characters (digits, specials, anything)
 )
 
 
@@ -39,7 +38,7 @@ def create_user():
             user = UserModel(**body)
             mongo.db.users.insert_one(user.dict())
             return jsonify(user=user.dict()), 201
-        return jsonify(info="Password is not secure.", password_string=password_policy.strength(),
+        return jsonify(info="Password is not secure.", password_strength=password_policy.strength(),
                        password_requirements=str(password_policy.test())), 400
     return jsonify(error=True, info="The email already exist."), 400
 
@@ -97,19 +96,19 @@ def change_password(id):
 
     hash_code = bcrypt.hashpw(req['newPassword'].encode(), bcrypt.gensalt(10)).decode()
 
-    if 'password' in req and 'newPassword' in req and 'confirmPassword' in req:
+    if 'currentPassword' in req and 'newPassword' in req and 'confirmPassword' in req:
         if 'Admin' in current_user['roles']:
             mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
             return jsonify(info="Password changed.")
 
         if identity == id:
-            if bcrypt.checkpw(req['password'].encode(), user['password'].encode()):
+            if bcrypt.checkpw(req['currentPassword'].encode(), user['password'].encode()):
                 if req['newPassword'] == req['confirmPassword']:
                     password_policy = policy.password(req['newPassword'])
                     if not password_policy.test():
                         mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
                         return jsonify(info="Password changed.")
-                    return jsonify(info="Password is not secure.", password_string=password_policy.strength(),
+                    return jsonify(error="Password is not secure.", password_strength=password_policy.strength(),
                                    password_requirements=str(password_policy.test())), 400
             return jsonify(error="New password and confirm password didn't match!"), 400
         return jsonify(error="Wrong current password!"), 401
