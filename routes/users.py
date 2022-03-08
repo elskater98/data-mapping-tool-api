@@ -1,12 +1,21 @@
 import bcrypt
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from password_strength import PasswordPolicy
 
 from database import mongo
 from models.user import UserModel
 from utils import getUser
 
 users_router = Blueprint('users', __name__)
+
+policy = PasswordPolicy.from_names(
+    length=8,  # min length: 8
+    uppercase=1,  # need min. 1 uppercase letters
+    numbers=1,  # need min. 1 digits
+    special=1,  # need min. 1 special characters
+    nonletters=2,  # need min. 2 non-letter characters (digits, specials, anything)
+)
 
 
 @users_router.route("/", methods=["GET"])
@@ -20,15 +29,18 @@ def get_users():
 
 
 @users_router.route("/", methods=["POST"])
-@jwt_required()
 def create_user():
     body = request.json
     if not mongo.db.users.find_one({"username": body['username']}):
-        hash = bcrypt.hashpw(body['password'].encode(), bcrypt.gensalt(10))
-        body.update({'password': hash})
-        user = UserModel(**body)
-        mongo.db.users.insert_one(user.dict())
-        return jsonify(user=user.dict()), 201
+        password_policy = policy.password(body['password'])
+        if not password_policy.test():
+            hash = bcrypt.hashpw(body['password'].encode(), bcrypt.gensalt(10))
+            body.update({'password': hash})
+            user = UserModel(**body)
+            mongo.db.users.insert_one(user.dict())
+            return jsonify(user=user.dict()), 201
+        return jsonify(info="Password is not secure.", password_string=password_policy.strength(),
+                       password_requirements=str(password_policy.test())), 400
     return jsonify(error=True, info="The email already exist."), 400
 
 
@@ -93,8 +105,12 @@ def change_password(id):
         if identity == id:
             if bcrypt.checkpw(req['password'].encode(), user['password'].encode()):
                 if req['newPassword'] == req['confirmPassword']:
-                    mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
-                    return jsonify(info="Password changed.")
+                    password_policy = policy.password(req['newPassword'])
+                    if not password_policy.test():
+                        mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
+                        return jsonify(info="Password changed.")
+                    return jsonify(info="Password is not secure.", password_string=password_policy.strength(),
+                                   password_requirements=str(password_policy.test())), 400
             return jsonify(error="New password and confirm password didn't match!"), 400
         return jsonify(error="Wrong current password!"), 401
     return jsonify(error="Bad Request"), 400
