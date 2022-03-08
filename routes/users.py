@@ -28,7 +28,7 @@ def create_user():
         body.update({'password': hash})
         user = UserModel(**body)
         mongo.db.users.insert_one(user.dict())
-        return user.json(), 201
+        return jsonify(user=user.dict()), 201
     return jsonify(error=True, info="The email already exist."), 400
 
 
@@ -74,6 +74,7 @@ def delete_user(id):
 
 
 @users_router.route("/<id>/change/password", methods=["POST"])
+@jwt_required()
 def change_password(id):
     identity = get_jwt_identity()
     user = getUser(identity)
@@ -81,19 +82,24 @@ def change_password(id):
 
     hash_code = bcrypt.hashpw(req['password'].encode(), bcrypt.gensalt(10))
 
-    if 'Admin' in user['roles']:
-        mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
+    if 'password' in req and 'newPassword' in req and 'confirmPassword' in req:
+        pass
 
+    # if 'Admin' in user['roles']:
+    #     mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
+    #
     if identity == id:
-        if bcrypt.checkpw(req['password'], user['password']):
+        if bcrypt.checkpw(req['password'].encode(), user['password'].encode()):
             if req['newPassword'] == req['confirmPassword']:
                 mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
                 return jsonify(), 200
-
-        return jsonify(error="Wrong password!"), 401
+            return jsonify(error="Passwords didn't match!"), 400
+        return jsonify(error="Wrong current password!"), 401
+    return jsonify(error="Bad Request"), 400
 
 
 @users_router.route("/<id>/reset/password", methods=["POST"])
+@jwt_required()
 def reset_password(id):
     # TODO
     pass
