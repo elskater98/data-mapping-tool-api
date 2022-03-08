@@ -23,7 +23,7 @@ def create_app():
 
     # CORS
     # https://flask-cors.corydolphin.com/en/latest/api.html#extension
-    CORS(app)
+    CORS(app, origins=os.getenv("CORS_ORIGINS", "*").split(','))
 
     # JWT
     app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", default=secrets.token_hex())
