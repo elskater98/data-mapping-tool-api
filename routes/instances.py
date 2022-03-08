@@ -64,10 +64,8 @@ def edit_instance(ref):
     user = getUser(identity)
 
     if user:
-        if 'Admin' in user['roles']:
-            instance = mongo.db.instances.find_one({"ref": ref}, {"_id": 0})
-        else:
-            instance = mongo.db.instances.find_one({"ref": ref, "createdBy": identity}, {"_id": 0})
+        query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
+        instance = mongo.db.instances.find_one(query, {"_id": 0})
 
         if instance:
             instance.update(**request.json)
@@ -87,9 +85,14 @@ def delete_instance(ref):
     identity = get_jwt_identity()
     user = getUser(identity)
     if user:
-        if 'Admin' in user['roles']:
-            mongo.db.instances.delete_one({"ref": ref})
-        else:
-            mongo.db.instances.delete_one({"ref": ref, "createdBy": identity})
+        query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
+        instance = mongo.db.instances.find_one(query)
+        for filename in instance['filenames']:
+            del_query = {"kwargs.owner": instance['createdBy'], 'filename': filename}
+            file = mongo.db.fs.files.find_one(del_query)
+            mongo.db.fs.chunks.delete_many({"files_id": file['_id']})
+            mongo.db.fs.files.delete_one(del_query)
+
+        mongo.db.instances.delete_one(query)
         return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
     return jsonify(successful=False), 401
