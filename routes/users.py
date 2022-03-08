@@ -77,23 +77,24 @@ def delete_user(id):
 @jwt_required()
 def change_password(id):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    current_user = getUser(identity)
+    user = getUser(id)
+
     req = request.json
 
-    hash_code = bcrypt.hashpw(req['password'].encode(), bcrypt.gensalt(10))
+    hash_code = bcrypt.hashpw(req['newPassword'].encode(), bcrypt.gensalt(10)).decode()
 
     if 'password' in req and 'newPassword' in req and 'confirmPassword' in req:
-        pass
+        if 'Admin' in current_user['roles']:
+            mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
+            return jsonify(info="Password changed.")
 
-    # if 'Admin' in user['roles']:
-    #     mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
-    #
-    if identity == id:
-        if bcrypt.checkpw(req['password'].encode(), user['password'].encode()):
-            if req['newPassword'] == req['confirmPassword']:
-                mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
-                return jsonify(), 200
-            return jsonify(error="Passwords didn't match!"), 400
+        if identity == id:
+            if bcrypt.checkpw(req['password'].encode(), user['password'].encode()):
+                if req['newPassword'] == req['confirmPassword']:
+                    mongo.db.users.update_one({"username": id}, {"$set": {'password': hash_code}})
+                    return jsonify(info="Password changed.")
+            return jsonify(error="New password and confirm password didn't match!"), 400
         return jsonify(error="Wrong current password!"), 401
     return jsonify(error="Bad Request"), 400
 
