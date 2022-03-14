@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 import transform.yarrrml_transform as transform
 from database import mongo
-from utils import getUser
+from utils import get_user_by_username
 
 PREFIXES = """
 prefixes:
@@ -21,7 +21,7 @@ mapping_router = Blueprint('mapping', __name__)
 @jwt_required()
 def generate_mapping_config():
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
     req = request.json
 
     if 'ref' in req.keys() and 'classes' in req.keys() and req['classes']:

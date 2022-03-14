@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
 from models.instance import InstanceModel
-from utils import getUser
+from utils import get_user_by_username
 
 instances_router = Blueprint('instances', __name__)
 
@@ -16,7 +16,7 @@ instances_router = Blueprint('instances', __name__)
 @jwt_required()
 def get_instances():
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
     if user:
         if 'Admin' in user['roles']:
             return jsonify(successful=True,
@@ -33,7 +33,7 @@ def get_instances():
 @jwt_required()
 def get_instance(ref):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
     if user:
         if 'Admin' in user['roles']:
             return jsonify(successful=True, data=mongo.db.instances.find_one({"ref": ref}, {"_id": 0}))
@@ -61,7 +61,7 @@ def create_instance():
 @jwt_required()
 def edit_instance(ref):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
 
     if user:
         query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
@@ -83,7 +83,7 @@ def edit_instance(ref):
 @jwt_required()
 def delete_instance(ref):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
     if user:
         query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
         instance = mongo.db.instances.find_one(query)

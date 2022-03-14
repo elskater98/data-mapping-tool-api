@@ -6,7 +6,8 @@ from owlready2 import get_ontology, default_world
 
 from database import mongo
 from models.instance import InstanceModel
-from utils import getUser
+from models.ontology import OntologyModel
+from utils import get_user_by_username
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology(os.getenv("ONTOLOGY_PATH", os.path.join(os.path.abspath(os.getcwd()), "ontology.owl"))).load()
@@ -75,11 +76,24 @@ def get_relations():
     return jsonify(successful=True, relations=relations)
 
 
+@ontology_router.route("/", methods=["GET"])
+def get_ontology_view():
+    classes = [{'id': str(_class), 'data': {'label': str(_class)}, 'position': {'x': 0, 'y': 0}} for _class in
+               ontology.classes()]
+
+    relations = [
+        {"source": str(i.domain[0]), "target": str(i.range[0]), "id": str(i), "label": str(i), 'type': 'smooth',
+         'style': {'stroke': 'black'}, 'arrowHeadType': 'arrowclosed', 'animated': True} for i in
+        ontology.object_properties()]
+
+    return jsonify(classes=classes, relations=relations)
+
+
 @ontology_router.route("/init/instance/<ref>", methods=["POST"])
 @jwt_required()
 def init_instance_ontology(ref):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
 
     query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
     instance = mongo.db.instances.find_one(query, {"_id": 0})
@@ -110,3 +124,25 @@ def init_instance_ontology(ref):
             return jsonify(successful=False, error=str(ex)), 400
 
     return jsonify(successful=False), 401
+
+
+@ontology_router.route("/upload/<ontology>", methods=["POST"])
+@jwt_required()
+def upload_file(ontology):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    if 'Admin' in user['roles']:
+        if 'file' not in request.files or request.files['file'].filename == '':
+            return jsonify(error="No file attached."), 400
+
+        file = request.files['file']
+        file_id = mongo.save_file(filename=file.filename, fileobj=file)
+        ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology)
+
+        mongo.db.ontologies.update_many({}, {"$set": {'selected': False}})
+        mongo.db.ontologies.insert_one(ontology_model.dict())
+
+        return jsonify(successful=True)
+
+    return jsonify(), 403
