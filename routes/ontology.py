@@ -7,7 +7,7 @@ from owlready2 import get_ontology, default_world
 from database import mongo
 from models.instance import InstanceModel
 from models.ontology import OntologyModel
-from utils import getUser
+from utils import get_user_by_username
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology(os.getenv("ONTOLOGY_PATH", os.path.join(os.path.abspath(os.getcwd()), "ontology.owl"))).load()
@@ -93,7 +93,7 @@ def get_ontology_view():
 @jwt_required()
 def init_instance_ontology(ref):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
 
     query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
     instance = mongo.db.instances.find_one(query, {"_id": 0})
@@ -130,7 +130,7 @@ def init_instance_ontology(ref):
 @jwt_required()
 def upload_file(ontology):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
 
     if 'Admin' in user['roles']:
         if 'file' not in request.files or request.files['file'].filename == '':

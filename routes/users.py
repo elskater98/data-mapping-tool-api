@@ -5,7 +5,7 @@ from password_strength import PasswordPolicy
 
 from database import mongo
 from models.user import UserModel
-from utils import getUser
+from utils import get_user_by_username
 
 users_router = Blueprint('users', __name__)
 
@@ -21,7 +21,7 @@ policy = PasswordPolicy.from_names(
 @jwt_required()
 def get_users():
     identity = get_jwt_identity()
-    current_user = getUser(identity)
+    current_user = get_user_by_username(identity)
     if 'Admin' in current_user['roles']:
         return jsonify(data=list(mongo.db.users.find({}, {'_id': 0})))
     return jsonify(error=True), 401
@@ -47,7 +47,7 @@ def create_user():
 @jwt_required()
 def get_user(id):
     identity = get_jwt_identity()
-    current_user = getUser(identity)
+    current_user = get_user_by_username(identity)
     if 'Admin' in current_user['roles'] or identity == id:
         return jsonify(user=mongo.db.users.find_one_or_404({"username": id}, {'_id': 0}))
     return jsonify(error=True), 400
@@ -57,8 +57,8 @@ def get_user(id):
 @jwt_required()
 def edit_user(id):
     identity = get_jwt_identity()
-    current_user = getUser(identity)
-    user = getUser(id)
+    current_user = get_user_by_username(identity)
+    user = get_user_by_username(id)
     if 'Admin' in current_user['roles'] or identity == id:
         user.update(**request.json)
         try:
@@ -76,7 +76,7 @@ def edit_user(id):
 @jwt_required()
 def delete_user(id):
     identity = get_jwt_identity()
-    user = getUser(identity)
+    user = get_user_by_username(identity)
 
     if 'Admin' in user['roles'] or identity == id:
         mongo.db.users.delete_one({"username": id})
@@ -89,8 +89,8 @@ def delete_user(id):
 @jwt_required()
 def change_password(id):
     identity = get_jwt_identity()
-    current_user = getUser(identity)
-    user = getUser(id)
+    current_user = get_user_by_username(identity)
+    user = get_user_by_username(id)
 
     req = request.json
 
