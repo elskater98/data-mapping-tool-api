@@ -16,10 +16,8 @@ def get_user_by_username(username: str, projection=None):
     return mongo.db.users.find_one({"username": username}, projection)
 
 
-def set_current_ontology():
-    ontology = mongo.db.ontologies.find_one({'selected': True})
-    chunk_files = list(
-        mongo.db.fs.chunks.find({'files_id': ObjectId(ontology['file_id'])}).sort([("n", pymongo.ASCENDING)]))
+def get_file(file_id):
+    chunk_files = list(mongo.db.fs.chunks.find({'files_id': ObjectId(file_id)}).sort([("n", pymongo.ASCENDING)]))
 
     with open('ontology2.owl', 'w') as file:
         for i in chunk_files:
