@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from flask import Blueprint, jsonify, request
@@ -6,7 +7,7 @@ from owlready2 import get_ontology, default_world
 
 from database import mongo
 from models.instance import InstanceModel
-from models.ontology import OntologyModel
+from models.ontology import OntologyModel, VisibilityEnum
 from utils import get_user_by_username
 
 ontology_router = Blueprint('ontology', __name__)
@@ -128,21 +129,43 @@ def init_instance_ontology(ref):
 
 @ontology_router.route("/upload/<ontology>", methods=["POST"])
 @jwt_required()
-def upload_file(ontology):
+def upload_ontology(ontology):
     identity = get_jwt_identity()
-    user = get_user_by_username(identity)
 
-    if 'Admin' in user['roles']:
-        if 'file' not in request.files or request.files['file'].filename == '':
-            return jsonify(error="No file attached."), 400
+    if 'file' not in request.files or request.files['file'].filename == '':
+        return jsonify(error="No file attached."), 400
 
-        file = request.files['file']
-        file_id = mongo.save_file(filename=file.filename, fileobj=file)
-        ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology)
+    file = request.files['file']
+    file_id = mongo.save_file(filename=file.filename, fileobj=file)
 
-        mongo.db.ontologies.update_many({}, {"$set": {'selected': False}})
-        mongo.db.ontologies.insert_one(ontology_model.dict())
+    ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology,
+                                   createdBy=identity, createdAt=datetime.datetime.utcnow(),
+                                   visibility=VisibilityEnum.private)
 
-        return jsonify(successful=True)
+    mongo.db.ontologies.insert_one(ontology_model.dict())
 
-    return jsonify(), 403
+    return jsonify(successful=True)
+
+
+@ontology_router.route("")
+@jwt_required()
+def get_ontologies():
+    pass
+
+
+@ontology_router.route("<ontology>")
+@jwt_required()
+def get_ontology(ontology):
+    pass
+
+
+@ontology_router.route("<ontology>")
+@jwt_required()
+def edit_ontology():
+    pass
+
+
+@ontology_router.route("<ontology>")
+@jwt_required()
+def remove_ontology():
+    pass
