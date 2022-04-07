@@ -9,7 +9,7 @@ from owlready2 import default_world, get_ontology
 from database import mongo
 from models.instance import InstanceModel
 from models.ontology import OntologyModel, VisibilityEnum
-from utils import get_user_by_username, parse_json
+from utils import get_user_by_username, parse_json, remove_file
 
 ontology_router = Blueprint('ontology', __name__)
 
@@ -130,9 +130,9 @@ ontology_router = Blueprint('ontology', __name__)
 #     return jsonify(successful=False), 401
 #
 
-@ontology_router.route("/upload/<ontology>", methods=["POST"])
+@ontology_router.route("/<ontology>", methods=["POST"])
 @jwt_required()
-def upload_ontology(ontology):
+def create_ontology(ontology):
     identity = get_jwt_identity()
 
     if 'file' not in request.files or request.files['file'].filename == '':
@@ -150,7 +150,7 @@ def upload_ontology(ontology):
     return jsonify(successful=True)
 
 
-@ontology_router.route("")
+@ontology_router.route("/", methods=["GET"])
 @jwt_required()
 def get_ontologies():
     identity = get_jwt_identity()
@@ -163,7 +163,7 @@ def get_ontologies():
     return jsonify(data=parse_json(ontologies))
 
 
-@ontology_router.route("/<id>")
+@ontology_router.route("/<id>", methods=["GET"])
 @jwt_required()
 def get_ontology(id):
     identity = get_jwt_identity()
@@ -176,13 +176,23 @@ def get_ontology(id):
     return jsonify(data=parse_json(ontologies))
 
 
-@ontology_router.route("<ontology>")
+@ontology_router.route("/<id>")
 @jwt_required()
-def edit_ontology():
+def edit_ontology(id):
     pass
 
 
-@ontology_router.route("<ontology>")
+@ontology_router.route("/<id>", methods=["DELETE"])
 @jwt_required()
-def remove_ontology():
-    pass
+def remove_ontology(id):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id),
+                                                                    "createdBy": identity}
+    ontology_instance = mongo.db.ontologies.find_one(query)
+
+    if ontology_instance:
+        remove_file(ontology_instance['file_id'])
+        mongo.db.ontologies.delete_one({"_id": ObjectId(id)})
+        return jsonify()

@@ -28,6 +28,10 @@ def get_file(file_id):
     return file
 
 
+def remove_file(file_id):
+    mongo.db.fs.chunks.delete_many({'files_id': ObjectId(file_id)})
+
+
 def define_ontology(ontology_id):
     # https://owlready2.readthedocs.io/en/latest/world.html
 
