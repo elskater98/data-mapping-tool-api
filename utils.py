@@ -1,9 +1,10 @@
+import json
 import shutil
 import tempfile
 from io import StringIO
 
 import pymongo
-from bson import ObjectId
+from bson import ObjectId, json_util
 from owlready2 import World
 
 from database import mongo
@@ -39,3 +40,7 @@ def define_ontology(ontology_id):
         shutil.copyfileobj(ontology_file, file)
         ontology_instance.get_ontology(file.name).load()
     return ontology_instance
+
+
+def parse_json(data):
+    return json.loads(json_util.dumps(data))
