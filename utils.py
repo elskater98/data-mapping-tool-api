@@ -1,7 +1,7 @@
 import json
-import shutil
 import tempfile
 from io import StringIO
+from time import sleep
 
 import pymongo
 from bson import ObjectId, json_util
@@ -39,9 +39,8 @@ def define_ontology(ontology_id):
     ontology_file = get_file(ontology_record['file_id'])
     ontology_instance = World()
 
-    with tempfile.NamedTemporaryFile(dir='output', mode='w') as file:
-        ontology_file.seek(0)
-        shutil.copyfileobj(ontology_file, file)
+    with tempfile.NamedTemporaryFile(dir='output', mode='w', suffix='.owl') as file:
+        file.write(ontology_file.getvalue())
         ontology_instance.get_ontology(file.name).load()
     return ontology_instance
 
