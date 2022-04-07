@@ -176,10 +176,27 @@ def get_ontology(id):
     return jsonify(data=parse_json(ontologies))
 
 
-@ontology_router.route("/<id>")
+@ontology_router.route("/<id>", methods=['PATCH'])
 @jwt_required()
 def edit_ontology(id):
-    pass
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    if user:
+        query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id),
+                                                                        "createdBy": identity}
+        ontology_instance = mongo.db.ontologies.find_one(query, {"_id": 0})
+
+        if ontology_instance:
+            ontology_instance.update(**request.json)
+            try:
+                ontology = OntologyModel(**ontology_instance)
+                mongo.db.ontologies.update_one({"_id": ObjectId(id)}, {"$set": ontology.dict()})
+                return jsonify(successful=f"The ref.: {id} has been updated successfully.", instance=ontology.dict())
+            except Exception as ex:
+                return jsonify(error=str(ex)), 400
+        return jsonify(successful=False, error="The references doesn't exist."), 400
+    return jsonify(successful=False), 401
 
 
 @ontology_router.route("/<id>", methods=["DELETE"])
@@ -196,3 +213,5 @@ def remove_ontology(id):
         remove_file(ontology_instance['file_id'])
         mongo.db.ontologies.delete_one({"_id": ObjectId(id)})
         return jsonify()
+
+    return jsonify(), 400
