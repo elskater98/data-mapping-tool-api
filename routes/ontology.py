@@ -1,6 +1,7 @@
 import datetime
-import io
 import os
+import shutil
+import tempfile
 
 from bson import ObjectId
 from flask import Blueprint, jsonify, request
@@ -10,7 +11,7 @@ from owlready2 import default_world, World, get_ontology
 from database import mongo
 from models.instance import InstanceModel
 from models.ontology import OntologyModel, VisibilityEnum
-from utils import get_user_by_username
+from utils import get_user_by_username, get_file
 
 ontology_router = Blueprint('ontology', __name__)
 ontology = get_ontology(os.getenv("ONTOLOGY_PATH", os.path.join(os.path.abspath(os.getcwd()), "ontology.owl"))).load()
@@ -170,18 +171,4 @@ def edit_ontology():
 @ontology_router.route("<ontology>")
 @jwt_required()
 def remove_ontology():
-    pass
-
-
-def define_ontology(ontology_id):
-    # https://owlready2.readthedocs.io/en/latest/world.html
-
-    ontology_record = mongo.db.ontologies.find_one({"_id": ObjectId(ontology_id)})
-    ontology_file = recover_file(ontology_record['file_id'])
-    ontology = World()
-    io.StringIO("sss")
-    # return ontology.get_ontology().load()
-
-
-def recover_file(file_id):
     pass

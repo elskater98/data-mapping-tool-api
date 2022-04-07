@@ -1,7 +1,10 @@
-import io
+import shutil
+import tempfile
+from io import StringIO
 
 import pymongo
 from bson import ObjectId
+from owlready2 import World
 
 from database import mongo
 
@@ -18,7 +21,21 @@ def get_user_by_username(username: str, projection=None):
 
 def get_file(file_id):
     chunk_files = list(mongo.db.fs.chunks.find({'files_id': ObjectId(file_id)}).sort([("n", pymongo.ASCENDING)]))
+    file = StringIO()
+    for i in chunk_files:
+        file.write(i['data'].decode())
+    return file
 
-    with open('ontology2.owl', 'w') as file:
-        for i in chunk_files:
-            file.write(i['data'].decode())
+
+def define_ontology(ontology_id):
+    # https://owlready2.readthedocs.io/en/latest/world.html
+
+    ontology_record = mongo.db.ontologies.find_one({"_id": ObjectId(ontology_id)})
+    ontology_file = get_file(ontology_record['file_id'])
+    ontology_instance = World()
+
+    with tempfile.NamedTemporaryFile(dir='output', mode='w') as file:
+        ontology_file.seek(0)
+        shutil.copyfileobj(ontology_file, file)
+        ontology_instance.get_ontology(file.name).load()
+    return ontology_instance
