@@ -93,42 +93,7 @@ ontology_router = Blueprint('ontology', __name__)
 #     return jsonify(classes=classes, relations=relations)
 #
 #
-# @ontology_router.route("/init/instance/<ref>", methods=["POST"])
-# @jwt_required()
-# def init_instance_ontology(ref):
-#     identity = get_jwt_identity()
-#     user = get_user_by_username(identity)
-#
-#     query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
-#     instance = mongo.db.instances.find_one(query, {"_id": 0})
-#     if instance:
-#         classes = [str(i) for i in list(ontology.classes())]
-#         relations = ontology.object_properties()
-#
-#         for _class in classes:
-#             if 'mapping' not in instance:
-#                 instance.update({"mapping": {}})
-#             instance['mapping'].update(
-#                 {_class: {"status": False, "fileSelected": instance['filenames'][0], "columns": {}}})
-#
-#         for relation in relations:
-#             if 'relations' not in instance:
-#                 instance.update({"relations": {}})
-#             instance['relations'].update(
-#                 {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
-#                                  "relation": str(relation),
-#                                  "selected": False, "from_rel": None, "to_rel": None}})
-#
-#         try:
-#             instance_model = InstanceModel(**instance)
-#             mongo.db.instances.update_one(query, {
-#                 "$set": {"mapping": instance['mapping'], "relations": instance['relations']}})
-#             return jsonify(successful=True, instance=instance_model.dict())
-#         except Exception as ex:
-#             return jsonify(successful=False, error=str(ex)), 400
-#
-#     return jsonify(successful=False), 401
-#
+
 
 @ontology_router.route("/<ontology>", methods=["POST"])
 @jwt_required()
