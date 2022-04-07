@@ -1,6 +1,6 @@
 import datetime
 import os
-
+from flask import send_file
 from bson import ObjectId
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -9,7 +9,7 @@ from owlready2 import default_world, get_ontology
 from database import mongo
 from models.instance import InstanceModel
 from models.ontology import OntologyModel, VisibilityEnum
-from utils import get_user_by_username, parse_json, remove_file
+from utils import get_user_by_username, parse_json, remove_file, get_file
 
 ontology_router = Blueprint('ontology', __name__)
 
@@ -139,7 +139,7 @@ def create_ontology(ontology):
         return jsonify(error="No file attached."), 400
 
     file = request.files['file']
-    file_id = mongo.save_file(filename=file.filename, fileobj=file)
+    file_id = mongo.save_file(filename=file.filename, fileobj=file, kwargs={"owner": identity})
 
     ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology,
                                    createdBy=identity, createdAt=datetime.datetime.utcnow(),
@@ -169,8 +169,8 @@ def get_ontology(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
 
-    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id),
-                                                                    "createdBy": identity}
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {
+        "$or": [{"visibility": VisibilityEnum.public}, {"createdBy": identity}]}
     ontologies = mongo.db.ontologies.find_one(query)
 
     return jsonify(data=parse_json(ontologies))
@@ -215,3 +215,21 @@ def remove_ontology(id):
         return jsonify()
 
     return jsonify(), 400
+
+
+@ontology_router.route("/<id>/download", methods=["GET"])
+@jwt_required()
+def download_ontology(id):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {
+        "$or": [{"_id": ObjectId(id), "visibility": VisibilityEnum.public},
+                {"_id": ObjectId(id), "createdBy": identity}]}
+
+    ontology_instance = mongo.db.ontologies.find_one(query)
+
+    if ontology_instance:
+        return jsonify(data=get_file(ontology_instance['file_id']).getvalue())
+
+    return jsonify(error="No access to file"), 401
