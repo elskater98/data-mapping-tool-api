@@ -1,7 +1,6 @@
 import json
 import tempfile
 from io import StringIO
-from time import sleep
 
 import pymongo
 from bson import ObjectId, json_util

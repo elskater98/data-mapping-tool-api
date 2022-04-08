@@ -45,4 +45,4 @@ If you do not have a MongoDB, you can deploy it using `docker-compose up -d`.
 ## Ontology
 
 The ontology that the backend use is located in `ontology.owl`, in this file you can put yours ontology. By default, it
-uses the `RDF/OWL` format to represent our ontology. 
+uses the `RDF/XML Syntax` format to represent our ontology. 

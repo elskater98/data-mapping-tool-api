@@ -122,10 +122,12 @@ def init_instance_ontology(ref):
         for relation in relations:
             if 'relations' not in instance:
                 instance.update({"relations": {}})
-            instance['relations'].update(
-                {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
-                                 "relation": str(relation),
-                                 "selected": False, "from_rel": None, "to_rel": None}})
+
+            if relation.domain and relation.range:
+                instance['relations'].update(
+                    {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
+                                     "relation": str(relation),
+                                     "selected": False, "from_rel": None, "to_rel": None}})
 
         try:
             instance_model = InstanceModel(**instance)
