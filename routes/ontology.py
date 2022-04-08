@@ -65,9 +65,10 @@ def get_relations(id):
     ontology = define_ontology(id)
 
     for i in ontology.object_properties():
-        if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
-            rel = {"from": str(i.domain[0]), "to": str(i.range[0]), "relation": str(i)}
-            relations.update({str(i): rel})
+        if i.domain and i.range:
+            if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
+                rel = {"from": str(i.domain[0]), "to": str(i.range[0]), "relation": str(i)}
+                relations.update({str(i): rel})
 
     return jsonify(successful=True, relations=relations)
 
