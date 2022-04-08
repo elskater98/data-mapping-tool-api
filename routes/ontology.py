@@ -1,42 +1,36 @@
-import os
+import datetime
 
+from bson import ObjectId
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from owlready2 import get_ontology, default_world
 
 from database import mongo
-from models.instance import InstanceModel
-from models.ontology import OntologyModel
-from utils import get_user_by_username
+from models.ontology import OntologyModel, VisibilityEnum
+from utils import get_user_by_username, parse_json, remove_file, get_file, define_ontology
 
 ontology_router = Blueprint('ontology', __name__)
-ontology = get_ontology(os.getenv("ONTOLOGY_PATH", os.path.join(os.path.abspath(os.getcwd()), "ontology.owl"))).load()
 
 
-@ontology_router.route("/query", methods=["POST"])
+@ontology_router.route("/<id>/classes", methods=["GET"])
 @jwt_required()
-def sparql_query():
-    data = list(default_world.sparql(request.json['query']))
-    return jsonify(data=data.__str__())
-
-
-@ontology_router.route("/classes", methods=["GET"])
-@jwt_required()
-def get_classes():
+def get_classes(id):
+    ontology = define_ontology(id)
     return jsonify(data=[{"label": str(i), "value": str(i)} for i in list(ontology.classes())])
 
 
-@ontology_router.route("/relations", methods=["GET"])
+@ontology_router.route("/<id>/relations", methods=["GET"])
 @jwt_required()
-def get_classes_relations():
+def get_classes_relations(id):
+    ontology = define_ontology(id)
     relations = [{"class": str(i), "relations": list(i._get_class_possible_relations()).__str__()[1:-1].split(',')} for
                  i in list(ontology.classes())]
     return jsonify(data=relations)
 
 
-@ontology_router.route("/properties/<property_type>", methods=["GET"])
+@ontology_router.route("/<id>/properties/<property_type>", methods=["GET"])
 @jwt_required()
-def get_object_properties(property_type):
+def get_object_properties(id, property_type):
+    ontology = define_ontology(id)
     properties = []
 
     if property_type == 'data':
@@ -63,11 +57,13 @@ def get_object_properties(property_type):
              "domain": str(i.domain)[1:-1]} for i in properties])
 
 
-@ontology_router.route("/classes/relations", methods=["POST"])
+@ontology_router.route("/<id>/classes/relations", methods=["POST"])
 @jwt_required()
-def get_relations():
+def get_relations(id):
     req = request.json
     relations = {}
+    ontology = define_ontology(id)
+
     for i in ontology.object_properties():
         if str(i.domain[0]) in req['classes'] and str(i.range[0]) in req['classes']:
             rel = {"from": str(i.domain[0]), "to": str(i.range[0]), "relation": str(i)}
@@ -76,8 +72,9 @@ def get_relations():
     return jsonify(successful=True, relations=relations)
 
 
-@ontology_router.route("/", methods=["GET"])
-def get_ontology_view():
+@ontology_router.route("/<id>/view", methods=["GET"])
+def get_ontology_view(id):
+    ontology = define_ontology(id)
     classes = [{'id': str(_class), 'data': {'label': str(_class)}, 'position': {'x': 0, 'y': 0}} for _class in
                ontology.classes()]
 
@@ -89,60 +86,106 @@ def get_ontology_view():
     return jsonify(classes=classes, relations=relations)
 
 
-@ontology_router.route("/init/instance/<ref>", methods=["POST"])
+@ontology_router.route("/<ontology>", methods=["POST"])
 @jwt_required()
-def init_instance_ontology(ref):
+def create_ontology(ontology):
+    identity = get_jwt_identity()
+
+    if 'file' not in request.files or request.files['file'].filename == '':
+        return jsonify(error="No file attached."), 400
+
+    file = request.files['file']
+    file_id = mongo.save_file(filename=file.filename, fileobj=file, kwargs={"owner": identity})
+
+    ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology,
+                                   createdBy=identity, createdAt=datetime.datetime.utcnow(),
+                                   visibility=VisibilityEnum.private)
+
+    mongo.db.ontologies.insert_one(ontology_model.dict())
+
+    return jsonify(successful=True)
+
+
+@ontology_router.route("/", methods=["GET"])
+@jwt_required()
+def get_ontologies():
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
 
-    query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
-    instance = mongo.db.instances.find_one(query, {"_id": 0})
-    if instance:
-        classes = [str(i) for i in list(ontology.classes())]
-        relations = ontology.object_properties()
+    query = {} if 'Admin' in user['roles'] else {
+        "$or": [{"visibility": VisibilityEnum.public}, {"createdBy": identity}]}
+    ontologies = mongo.db.ontologies.find(query)
 
-        for _class in classes:
-            if 'mapping' not in instance:
-                instance.update({"mapping": {}})
-            instance['mapping'].update(
-                {_class: {"status": False, "fileSelected": instance['filenames'][0], "columns": {}}})
+    return jsonify(data=parse_json(ontologies))
 
-        for relation in relations:
-            if 'relations' not in instance:
-                instance.update({"relations": {}})
-            instance['relations'].update(
-                {str(relation): {"from": str(relation.domain[0]), "to": str(relation.range[0]),
-                                 "relation": str(relation),
-                                 "selected": False, "from_rel": None, "to_rel": None}})
 
-        try:
-            instance_model = InstanceModel(**instance)
-            mongo.db.instances.update_one(query, {
-                "$set": {"mapping": instance['mapping'], "relations": instance['relations']}})
-            return jsonify(successful=True, instance=instance_model.dict())
-        except Exception as ex:
-            return jsonify(successful=False, error=str(ex)), 400
+@ontology_router.route("/<id>", methods=["GET"])
+@jwt_required()
+def get_ontology(id):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
 
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {
+        "$or": [{"visibility": VisibilityEnum.public}, {"createdBy": identity}]}
+    ontologies = mongo.db.ontologies.find_one(query)
+
+    return jsonify(data=parse_json(ontologies))
+
+
+@ontology_router.route("/<id>", methods=['PATCH'])
+@jwt_required()
+def edit_ontology(id):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    if user:
+        query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id),
+                                                                        "createdBy": identity}
+        ontology_instance = mongo.db.ontologies.find_one(query, {"_id": 0})
+
+        if ontology_instance:
+            ontology_instance.update(**request.json)
+            try:
+                ontology = OntologyModel(**ontology_instance)
+                mongo.db.ontologies.update_one({"_id": ObjectId(id)}, {"$set": ontology.dict()})
+                return jsonify(successful=f"The ref.: {id} has been updated successfully.", instance=ontology.dict())
+            except Exception as ex:
+                return jsonify(error=str(ex)), 400
+        return jsonify(successful=False, error="The references doesn't exist."), 400
     return jsonify(successful=False), 401
 
 
-@ontology_router.route("/upload/<ontology>", methods=["POST"])
+@ontology_router.route("/<id>", methods=["DELETE"])
 @jwt_required()
-def upload_file(ontology):
+def remove_ontology(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
 
-    if 'Admin' in user['roles']:
-        if 'file' not in request.files or request.files['file'].filename == '':
-            return jsonify(error="No file attached."), 400
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id),
+                                                                    "createdBy": identity}
+    ontology_instance = mongo.db.ontologies.find_one(query)
 
-        file = request.files['file']
-        file_id = mongo.save_file(filename=file.filename, fileobj=file)
-        ontology_model = OntologyModel(filename=file.filename, file_id=str(file_id), ontology_name=ontology)
+    if ontology_instance:
+        remove_file(ontology_instance['file_id'])
+        mongo.db.ontologies.delete_one({"_id": ObjectId(id)})
+        return jsonify()
 
-        mongo.db.ontologies.update_many({}, {"$set": {'selected': False}})
-        mongo.db.ontologies.insert_one(ontology_model.dict())
+    return jsonify(), 400
 
-        return jsonify(successful=True)
 
-    return jsonify(), 403
+@ontology_router.route("/<id>/download", methods=["GET"])
+@jwt_required()
+def download_ontology(id):
+    identity = get_jwt_identity()
+    user = get_user_by_username(identity)
+
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {
+        "$or": [{"_id": ObjectId(id), "visibility": VisibilityEnum.public},
+                {"_id": ObjectId(id), "createdBy": identity}]}
+
+    ontology_instance = mongo.db.ontologies.find_one(query)
+
+    if ontology_instance:
+        return jsonify(data=get_file(ontology_instance['file_id']).getvalue())
+
+    return jsonify(error="No access to file"), 401
