@@ -1006,6 +1006,17 @@
         <rdfs:domain rdf:resource="http://bigg-project.eu/ontology#EnergyPerformanceCertificate"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </DatatypeProperty>
+
+
+    <DatatypeProperty rdf:about="http://bigg-project.eu/ontology#areaType">
+        <rdfs:domain rdf:resource="http://bigg-project.eu/ontology#AreaType"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+    </DatatypeProperty>
+
+    <DatatypeProperty rdf:about="http://bigg-project.eu/ontology#measurement">
+        <rdfs:domain rdf:resource="http://bigg-project.eu/ontology#AreaUnitOfMeasurement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </DatatypeProperty>
     
 
 
