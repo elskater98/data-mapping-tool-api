@@ -2701,6 +2701,24 @@
     
 
 
+    <!-- http://www.co-ode.org/ontologies/ont.owl#areaMeasurementUnit -->
+
+    <DatatypeProperty rdf:about="http://www.co-ode.org/ontologies/ont.owl#areaMeasurementUnit">
+        <rdfs:domain rdf:resource="http://bigg-project.eu/ontology#AreaUnitOfMeasurement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </DatatypeProperty>
+    
+
+
+    <!-- http://www.co-ode.org/ontologies/ont.owl#areaType -->
+
+    <DatatypeProperty rdf:about="http://www.co-ode.org/ontologies/ont.owl#areaType">
+        <rdfs:domain rdf:resource="http://bigg-project.eu/ontology#AreaType"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </DatatypeProperty>
+    
+
+
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
