@@ -5,7 +5,7 @@ from password_strength import PasswordPolicy
 
 from database import mongo
 from models.user import UserModel
-from utils import get_user_by_username
+from utils.utils import get_user_by_username
 
 users_router = Blueprint('users', __name__)
 

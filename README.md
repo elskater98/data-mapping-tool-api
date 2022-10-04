@@ -37,6 +37,9 @@ If you do not have a MongoDB, you can deploy it using `docker-compose up -d`.
 
     MONGO_URI=
 
+    ADMIN_EMAL=
+    ADMIN_PASSWORD=
+
 ### ¿ How to Generate Secret Key ?
 
     $ python -c 'import secrets; print(secrets.token_hex())'
@@ -45,4 +48,18 @@ If you do not have a MongoDB, you can deploy it using `docker-compose up -d`.
 ## Ontology
 
 The ontology that the backend use is located in `ontology.owl`, in this file you can put yours ontology. By default, it
-uses the `RDF/XML Syntax` format to represent our ontology. 
+uses the `RDF/XML Syntax` format to represent our ontology.
+
+
+## Transformations
+
+### [YARRRML](https://rml.io/yarrrml/)
+#### [YARRRML Parser](https://hub.docker.com/r/rmlio/yarrrml-parser)
+    docker pull rmlio/yarrrml-parser
+
+    docker run --rm -it -v $(pwd)/:/data rmlio/yarrrml-parser:latest -i /data/input.yml -o /data/mapping.ttl
+
+#### [RML Mapper](https://hub.docker.com/r/rmlio/rmlmapper-java)
+    docker pull rmlio/rmlmapper-java
+
+    docker run --rm -v $(pwd)/:/data rmlio/rmlmapper-java  -m mapping.ttl -o /data/out.rdf

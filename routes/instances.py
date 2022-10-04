@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
 from models.instance import InstanceModel
-from utils import get_user_by_username, define_ontology
+from utils.utils import get_user_by_username, define_ontology
 
 instances_router = Blueprint('instances', __name__)
 

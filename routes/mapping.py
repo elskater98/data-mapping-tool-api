@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-import transform.yarrrml_transform as transform
+import utils.transformations as transform
 from database import mongo
-from utils import get_user_by_username
+from utils.utils import get_user_by_username
 
 PREFIXES = """
 prefixes:

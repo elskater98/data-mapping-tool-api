@@ -6,7 +6,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
-from utils import allowed_files
+from utils.utils import allowed_files
 
 files_router = Blueprint('files', __name__)
 
