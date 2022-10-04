@@ -1,0 +1,115 @@
+prefixes:
+  dbo: https://dbpedia.org/ontology/
+  bigg: https://bigg-project.eu/ontology#
+
+mappings:
+  building:
+    sources:
+      - [ 'immobles-alta.csv~csv' ]
+    s: bigg:ontology.Building/$(Num. Ens/ Num. Inventari)
+    po:
+      - [ a, schema:ontology.Building ]
+      - [ schema:buildingIDFromOrganization, $(Num. Ens/ Num. Inventari) ]
+      - p: bigg:ontology.hasCadastralInfo
+        o:
+          mapping: cadastralinfo
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(Num. Ens/ Num. Inventari) ]
+              - [ str2, $(Num. Ens/ Num. Inventari) ]
+
+      - p: bigg:ontology.hasLocationInfo
+        o:
+          mapping: locationinfo
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(Num. Ens/ Num. Inventari) ]
+              - [ str2, $(Num. Ens/ Num. Inventari) ]
+
+      - p: bigg:ontology.hasSpace
+        o:
+          mapping: buildingspace
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(Num. Ens/ Num. Inventari) ]
+              - [ str2, $(Num. Ens/ Num. Inventari) ]
+
+
+  locationinfo:
+    sources:
+      - [ 'immobles-alta.csv~csv' ]
+    s: bigg:ontology.LocationInfo/$(Num. Ens/ Num. Inventari)
+    po:
+      - [ a, schema:ontology.LocationInfo ]
+      - [ schema:addressPostalCode, $(Municipi) ]
+      - [ schema:addressStreetName, $(Via) ]
+
+  cadastralinfo:
+    sources:
+      - [ 'immobles-alta.csv~csv' ]
+    s: bigg:ontology.CadastralInfo/$(Ref. Cadastral)
+    po:
+      - [ a, schema:ontology.CadastralInfo ]
+      - [ schema:landCadastralReference, $(Ref. Cadastral) ]
+
+  area:
+    sources:
+      - [ 'immobles-alta-area.csv~csv' ]
+    s: bigg:ontology.Area/$(area_id)
+    po:
+      - [ a, schema:ontology.Area ]
+      - [ schema:areaValue, $(area_value) ]
+      - p: bigg:ontology.hasAreaType
+        o:
+          mapping: areatype
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(area_id) ]
+              - [ str2, $(area_id) ]
+
+      - p: bigg:ontology.hasAreaUnitOfMeasurement
+        o:
+          mapping: areaunitofmeasurement
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(area_id) ]
+              - [ str2, $(area_id) ]
+
+
+  areatype:
+    sources:
+      - [ 'immobles-alta-area.csv~csv' ]
+    s: bigg:ontology.AreaType/$(area_id)
+    po:
+      - [ a, schema:ontology.AreaType ]
+      - [ schema:areaType, $(area_type) ]
+
+  areaunitofmeasurement:
+    sources:
+      - [ 'immobles-alta-area.csv~csv' ]
+    s: bigg:ontology.AreaUnitOfMeasurement/$(area_id)
+    po:
+      - [ a, schema:ontology.AreaUnitOfMeasurement ]
+      - [ schema:areaMeasurementUnit, $(units) ]
+
+  buildingspace:
+    sources:
+      - [ 'immobles-alta.csv~csv' ]
+    s: bigg:ontology.BuildingSpace/$(Num. Ens/ Num. Inventari)
+    po:
+      - [ a, schema:ontology.BuildingSpace ]
+      - [ schema:buildingSpaceName, $(Num. Ens/ Num. Inventari) ]
+      - [ schema:builidingSpaceIDFromOrganization, $(Num. Ens/ Num. Inventari) ]
+      - p: bigg:ontology.hasArea
+        o:
+          mapping: area
+          condition:
+            function: equal
+            parameters:
+              - [ str1, $(Num. Ens/ Num. Inventari) ]
+              - [ str2, $(Num. Ens/ Num. Inventari) ]

@@ -81,5 +81,5 @@ if __name__ == '__main__':
     s += add_predicate_object_simple("schema:buildingName", "$(Espai)")
     s += add_predicate_object_simple("schema:buildingUseType", "$(Tipus d'ús)")
 
-    with open("../yarrrml-example/building-auto.yml", 'w') as file:
+    with open("../examples/building-auto.yml", 'w') as file:
         file.write(s)
