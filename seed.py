@@ -25,7 +25,7 @@ class Seed:
             db['users'].insert_one(
                 {"username": os.getenv('ADMIN_EMAL'),
                  "password": bcrypt.hashpw(os.getenv('ADMIN_PASSWORD').encode(), bcrypt.gensalt(10)).decode(),
-                 "roles": 'Admin'})
+                 "roles": ['Admin']})
 
 
 if __name__ == '__main__':

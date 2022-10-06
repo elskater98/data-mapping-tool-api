@@ -9,6 +9,7 @@ from flask_jwt_extended import JWTManager
 
 from database import mongo
 from routes.authentication import authentication_router
+from routes.cleaning import cleaning_router
 from routes.files import files_router
 from routes.instances import instances_router
 from routes.mapping import mapping_router
@@ -42,4 +43,6 @@ def create_app():
     app.register_blueprint(users_router, url_prefix='/users')
     app.register_blueprint(ontology_router, url_prefix='/ontology')
     app.register_blueprint(mapping_router, url_prefix='/mapping')
+    app.register_blueprint(cleaning_router, url_prefix='/cleaning')
+
     return app

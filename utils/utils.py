@@ -3,7 +3,7 @@ import tempfile
 from io import StringIO
 
 import pymongo
-from bson import ObjectId, json_util
+from bson import ObjectId
 from owlready2 import World
 
 from database import mongo
@@ -29,6 +29,7 @@ def get_file(file_id):
 
 def remove_file(file_id):
     mongo.db.fs.chunks.delete_many({'files_id': ObjectId(file_id)})
+    mongo.db.fs.files.delete_one({"_id": ObjectId(file_id)})
 
 
 def define_ontology(ontology_id):
@@ -45,4 +46,4 @@ def define_ontology(ontology_id):
 
 
 def parse_json(data):
-    return json.loads(json_util.dumps(data))
+    return json.loads(json.dumps(data, default=str))

@@ -5,7 +5,6 @@ from pydantic import BaseModel, conlist, EmailStr, Field, constr
 
 
 class InstanceModel(BaseModel):
-    ref: str
     name: str
     description: Optional[constr(max_length=280)]
     filenames: conlist(str, min_items=1)

@@ -1,13 +1,13 @@
 import datetime
-import uuid
 
 import pymongo
+from bson import ObjectId
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from database import mongo
 from models.instance import InstanceModel
-from utils.utils import get_user_by_username, define_ontology
+from utils.utils import get_user_by_username, define_ontology, parse_json
 
 instances_router = Blueprint('instances', __name__)
 
@@ -20,26 +20,27 @@ def get_instances():
     if user:
         if 'Admin' in user['roles']:
             return jsonify(successful=True,
-                           data=list(mongo.db.instances.find({}, {"_id": 0}).sort([("createdAt", pymongo.DESCENDING)])))
+                           data=parse_json(list(mongo.db.instances.find({}).sort([("createdAt", pymongo.DESCENDING)]))))
         else:
             return jsonify(successful=True,
-                           data=list(mongo.db.instances.find({"createdBy": user['username']}, {"_id": 0}).sort(
-                               [("createdAt", pymongo.DESCENDING)])))
+                           data=parse_json(
+                               list(mongo.db.instances.find({"createdBy": user['username']}).sort(
+                                   [("createdAt", pymongo.DESCENDING)]))))
 
     return jsonify(successful=False), 401
 
 
-@instances_router.route("/<ref>", methods=["GET"])
+@instances_router.route("/<id>", methods=["GET"])
 @jwt_required()
-def get_instance(ref):
+def get_instance(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
     if user:
         if 'Admin' in user['roles']:
-            return jsonify(successful=True, data=mongo.db.instances.find_one({"ref": ref}, {"_id": 0}))
+            return jsonify(successful=True, data=parse_json(mongo.db.instances.find_one({"_id": ObjectId(id)})))
         else:
             return jsonify(successful=True,
-                           data=mongo.db.instances.find_one({"ref": ref, "createdBy": identity}, {"_id": 0}))
+                           data=parse_json(mongo.db.instances.find_one({"_id": ObjectId(id), "createdBy": identity})))
     return jsonify(successful=False), 401
 
 
@@ -48,44 +49,47 @@ def get_instance(ref):
 def create_instance():
     identity = get_jwt_identity()
     body = request.json
-    body.update({"createdBy": identity, "ref": str(uuid.uuid4()), "createdAt": datetime.datetime.utcnow()})
+    body.update({"createdBy": identity, "createdAt": datetime.datetime.utcnow()})
     try:
         instance = InstanceModel(**body)
-        mongo.db.instances.insert_one(instance.dict())
-        return jsonify(successful=True, instance=instance.dict()), 201
+        _id = mongo.db.instances.insert_one(instance.dict())
+        data = body.copy()
+        data.update({"_id": _id.inserted_id})
+        return jsonify(successful=True, instance=parse_json(data)), 201
     except Exception as ex:
         return jsonify(error=str(ex)), 400
 
 
-@instances_router.route("/<ref>", methods=["PATCH"])
+@instances_router.route("/<id>", methods=["PATCH"])
 @jwt_required()
-def edit_instance(ref):
+def edit_instance(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
 
     if user:
-        query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
-        instance = mongo.db.instances.find_one(query, {"_id": 0})
+        query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id), "createdBy": identity}
+        instance = mongo.db.instances.find_one(query)
 
         if instance:
             instance.update(**request.json)
             try:
                 instance = InstanceModel(**instance)
-                mongo.db.instances.update_one({"ref": ref}, {"$set": instance.dict()})
-                return jsonify(successful=f"The ref.: {ref} has been updated successfully.", instance=instance.dict())
+                mongo.db.instances.update_one({"_id": ObjectId(id)}, {"$set": instance.dict()})
+                return jsonify(successful=f"The ref.: {id} has been updated successfully.",
+                               instance=instance.dict())
             except Exception as ex:
                 return jsonify(error=str(ex)), 400
         return jsonify(successful=False, error="The references doesn't exist."), 400
     return jsonify(successful=False), 401
 
 
-@instances_router.route("/<ref>", methods=["DELETE"])
+@instances_router.route("/<id>", methods=["DELETE"])
 @jwt_required()
-def delete_instance(ref):
+def delete_instance(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
     if user:
-        query = {"ref": ref} if 'Admin' in user['roles'] else {"ref": ref, "createdBy": identity}
+        query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id), "createdBy": identity}
         instance = mongo.db.instances.find_one(query)
         for filename in instance['filenames']:
             del_query = {"kwargs.owner": instance['createdBy'], 'filename': filename}
@@ -94,18 +98,18 @@ def delete_instance(ref):
             mongo.db.fs.files.delete_one(del_query)
 
         mongo.db.instances.delete_one(query)
-        return jsonify(successful=f"The ref.: {ref} has been deleted successfully.")
+        return jsonify(successful=f"The ref.: {id} has been deleted successfully.")
     return jsonify(successful=False), 401
 
 
-@instances_router.route("/<ref>/initialize/schema", methods=["POST"])
+@instances_router.route("/<id>/initialize/schema", methods=["POST"])
 @jwt_required()
-def init_instance_ontology(ref):
+def init_instance_ontology(id):
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
 
-    query = {'ref': ref} if 'Admin' in user['roles'] else {'ref': ref, "createdBy": identity}
-    instance = mongo.db.instances.find_one(query, {"_id": 0})
+    query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id), "createdBy": identity}
+    instance = mongo.db.instances.find_one(query)
 
     ontology = define_ontology(instance['current_ontology'])
 
@@ -133,6 +137,7 @@ def init_instance_ontology(ref):
             instance_model = InstanceModel(**instance)
             mongo.db.instances.update_one(query, {
                 "$set": {"mapping": instance['mapping'], "relations": instance['relations']}})
+            print(instance_model)
             return jsonify(successful=True, instance=instance_model.dict())
         except Exception as ex:
             return jsonify(successful=False, error=str(ex)), 400

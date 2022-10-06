@@ -117,7 +117,7 @@ def get_ontologies():
         "$or": [{"visibility": VisibilityEnum.public}, {"createdBy": identity}]}
     ontologies = mongo.db.ontologies.find(query)
 
-    return jsonify(data=parse_json(ontologies))
+    return jsonify(data=parse_json(list(ontologies)))
 
 
 @ontology_router.route("/<id>", methods=["GET"])
@@ -168,7 +168,6 @@ def remove_ontology(id):
 
     if ontology_instance:
         remove_file(ontology_instance['file_id'])
-        mongo.db.ontologies.delete_one({"_id": ObjectId(id)})
         return jsonify()
 
     return jsonify(), 400

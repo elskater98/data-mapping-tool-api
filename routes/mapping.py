@@ -1,3 +1,4 @@
+from bson import ObjectId
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
@@ -23,9 +24,8 @@ def generate_mapping_config():
     identity = get_jwt_identity()
     user = get_user_by_username(identity)
     req = request.json
-
-    if 'ref' in req.keys() and 'classes' in req.keys() and req['classes']:
-        query = {'ref': req['ref']} if 'Admin' in user['roles'] else {'ref': req['ref'], "createdBy": identity}
+    if '_id' in req.keys() and 'classes' in req.keys() and req['classes']:
+        query = {'_id': ObjectId(req['_id'])} if 'Admin' in user['roles'] else {'_id': ObjectId(req['_id']), "createdBy": identity}
         instance = mongo.db.instances.find_one(query, {"_id": 0})
         yaml = ""
         yaml += transform.add_prefixes()
