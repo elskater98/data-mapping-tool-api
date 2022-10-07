@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from io import StringIO
 
@@ -36,12 +37,13 @@ def define_ontology(ontology_id):
     # https://owlready2.readthedocs.io/en/latest/world.html
 
     ontology_record = mongo.db.ontologies.find_one({"_id": ObjectId(ontology_id)})
-    ontology_file = get_file(ontology_record['file_id'])
+    ontology_file = mongo.db.fs.files.find_one({"_id": ObjectId(ontology_record['file_id'])})
+    ontology_chunk = get_file(ontology_record['file_id'])
     ontology_instance = World()
-
-    with tempfile.NamedTemporaryFile(dir='output', mode='w', suffix='.owl') as file:
-        file.write(ontology_file.getvalue())
-        ontology_instance.get_ontology(file.name).load()
+    with tempfile.TemporaryDirectory(dir='output') as temp_dir:
+        with open(os.path.join(temp_dir, ontology_file['filename'].split('.')[0]), 'w') as file:
+            file.write(ontology_chunk.getvalue())
+            ontology_instance.get_ontology(file.name).load()
     return ontology_instance
 
 

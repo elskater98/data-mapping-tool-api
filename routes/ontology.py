@@ -167,6 +167,7 @@ def remove_ontology(id):
     ontology_instance = mongo.db.ontologies.find_one(query)
 
     if ontology_instance:
+        mongo.db.ontologies.delete_one(query)
         remove_file(ontology_instance['file_id'])
         return jsonify()
 

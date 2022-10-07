@@ -111,11 +111,17 @@ def init_instance_ontology(id):
     query = {"_id": ObjectId(id)} if 'Admin' in user['roles'] else {"_id": ObjectId(id), "createdBy": identity}
     instance = mongo.db.instances.find_one(query)
 
-    ontology = define_ontology(instance['current_ontology'])
+    ontology = define_ontology(request.json['ontology_id'])
 
     if instance:
         classes = [str(i) for i in list(ontology.classes())]
         relations = ontology.object_properties()
+
+        if 'mapping' in instance:
+            instance['mapping'].clear()
+
+        if 'relations' in instance:
+            instance['relations'].clear()
 
         for _class in classes:
             if 'mapping' not in instance:
@@ -136,8 +142,7 @@ def init_instance_ontology(id):
         try:
             instance_model = InstanceModel(**instance)
             mongo.db.instances.update_one(query, {
-                "$set": {"mapping": instance['mapping'], "relations": instance['relations']}})
-            print(instance_model)
+                "$set": {"mapping": instance['mapping'], "relations": instance['relations'], "classes_to_map": []}})
             return jsonify(successful=True, instance=instance_model.dict())
         except Exception as ex:
             return jsonify(successful=False, error=str(ex)), 400
