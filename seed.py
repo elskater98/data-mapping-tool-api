@@ -21,9 +21,9 @@ class Seed:
         client = MongoClient(os.getenv('MONGO_URI'))
         db = client['data_mapping_tool']
 
-        if not db['users'].find_one({"username": os.getenv('ADMIN_EMAL')}):
+        if not db['users'].find_one({"username": os.getenv('ADMIN_EMAIL')}):
             db['users'].insert_one(
-                {"username": os.getenv('ADMIN_EMAL'),
+                {"username": os.getenv('ADMIN_EMAIL'),
                  "password": bcrypt.hashpw(os.getenv('ADMIN_PASSWORD').encode(), bcrypt.gensalt(10)).decode(),
                  "roles": ['Admin']})
 

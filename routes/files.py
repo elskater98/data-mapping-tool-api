@@ -23,9 +23,8 @@ def upload_file():
 
     if file and allowed_files(filename=file.filename, allowed_extensions=ALLOWED_EXTENSIONS):
         identity = get_jwt_identity()
-        mongo.save_file(filename=file.filename, fileobj=file, kwargs={"owner": identity})
-
-        return jsonify(successful=True)
+        file_id = mongo.save_file(filename=file.filename, fileobj=file, kwargs={"owner": identity})
+        return jsonify(successful=True, file_id=str(file_id))
 
     return jsonify(error="No file attached."), 400
 
